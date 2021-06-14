@@ -1,0 +1,8 @@
+port: "8000"
+
+db:
+  host:     "localhost"
+  port:     "5432"
+  username: "docker"
+  dbname:   "test_db"
+  sslmode:  "disable"
