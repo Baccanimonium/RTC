@@ -6,23 +6,23 @@ CREATE TABLE users
     password           varchar(255) not null,
     about              varchar(255),
     address            varchar(255),
-    phone              varchar(255),
+    phone              varchar(255)
 );
 
 CREATE TABLE doctor (
     id                 serial not null unique,
     id_user            int    references users (id) not null,
-    salary             double,
+    salary             money,
     qualifications     varchar(255),
     contacts           varchar(255)
-)
+);
 
 CREATE TABLE patient (
     id                 serial not null unique,
     id_user            int    references users (id) not null,
     description        varchar(500),
     recovered          boolean      not null default false
-)
+);
 
 CREATE TABLE course (
     id                 serial not null unique,
@@ -31,14 +31,14 @@ CREATE TABLE course (
     title              varchar(100),
     description        varchar(500),
     time_start         varchar(10),
-    time_end           varchar(10),
+    time_end           varchar(10)
 );
 
 CREATE TABLE schedule (
     id                 serial not null unique,
     id_user            int    references users (id) not null,
     title              varchar(100),
-    description        varchar(500),
+    description        varchar(500)
 );
 
 CREATE TABLE consultation (
@@ -48,7 +48,7 @@ CREATE TABLE consultation (
     id_course          int    references course (id),
     title              varchar(100),
     time_start         varchar(16),
-    time_end           varchar(16),
+    time_end           varchar(16)
 );
 
 CREATE TABLE event (
@@ -59,8 +59,8 @@ CREATE TABLE event (
     id_course          int    references course (id),
     type               varchar(100),
     description        varchar(500),
-    accepted           boolean      not null default false,
-)
+    accepted           boolean      not null default false
+);
 
 CREATE TABLE schedule_event
 (
