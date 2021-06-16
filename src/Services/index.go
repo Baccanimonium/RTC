@@ -5,7 +5,9 @@ import (
 )
 
 type Authorization interface {
-	CreateUser(user Repos.User) (int, error)
+	CreateUser(user Repos.UserCreate) (int, error)
+	GenerateToken(user Repos.UserLogin) (string, error)
+	ParseToken(rawToken string) (int, error)
 }
 
 type Services struct {

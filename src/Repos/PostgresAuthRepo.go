@@ -5,7 +5,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type User struct {
+type UserCreate struct {
 	Id       int    `json:"-" db:"id"`
 	Name     string `json:"name" binding:"required"`
 	Login    string `json:"login" binding:"required"`
@@ -15,8 +15,13 @@ type User struct {
 	Phone    string `json:"phone"`
 }
 
+type UserLogin struct {
+	Login    string `json:"login" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
 type Auth interface {
-	CreateUser(user User)
+	CreateUser(user UserCreate)
 }
 
 type AuthPostgres struct {
@@ -27,10 +32,10 @@ func NewAuthPostgresRepo(db *sqlx.DB) *AuthPostgres {
 	return &AuthPostgres{db: db}
 }
 
-func (r *AuthPostgres) CreateUser(user User) (int, error) {
+func (r *AuthPostgres) CreateUser(user UserCreate) (int, error) {
 	var id int
 	query := fmt.Sprintf(
-		"INSERT INTO %s (name, login, password_hash, about, address, phone) values ($1, $2, $3, $4, $5, $6) RETURNING id",
+		"INSERT INTO %s (name, login, password, about, address, phone) values ($1, $2, $3, $4, $5, $6) RETURNING id",
 		usersTable,
 	)
 	row := r.db.QueryRow(query, user.Name, user.Login, user.Password, user.About, user.Address, user.Phone)
@@ -40,4 +45,17 @@ func (r *AuthPostgres) CreateUser(user User) (int, error) {
 	}
 
 	return id, nil
+}
+
+func (r *AuthPostgres) GetUser(login, password string) (UserCreate, error) {
+	var user UserCreate
+
+	query := fmt.Sprintf(
+		"SELECT id FROM %s WHERE login=$1 AND password=$2",
+		usersTable,
+	)
+
+	err := r.db.Get(&user, query, login, password)
+
+	return user, err
 }

@@ -17,8 +17,20 @@ func (h *Handler) InitRouter() *gin.Engine {
 	router := gin.New()
 	auth := router.Group("/auth")
 	{
-		auth.POST("/sing-up", h.singUp)
-		auth.POST("/sing-in", h.singIn)
+		auth.POST("/sign-up", h.signUp)
+		auth.POST("/sign-in", h.signIn)
+	}
+
+	api := router.Group("/api", h.userIdentity)
+	{
+		doctors := api.Group("/doctors")
+		{
+			doctors.POST("/", h.createDoctor)
+			doctors.GET("/", h.listDoctor)
+			doctors.GET("/:id", h.getDoctor)
+			doctors.PUT("/:id", h.updateDoctor)
+			doctors.DELETE("/:id", h.deleteDoctor)
+		}
 	}
 
 	return router

@@ -5,7 +5,8 @@ import (
 )
 
 type Authorization interface {
-	CreateUser(user User) (int, error)
+	CreateUser(user UserCreate) (int, error)
+	GetUser(login, password string) (UserCreate, error)
 }
 
 type Repo struct {

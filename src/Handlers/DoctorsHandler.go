@@ -1,21 +1,23 @@
 package Handlers
 
-func getDoctor() {
+import "github.com/gin-gonic/gin"
+
+func (h Handler) getDoctor(c *gin.Context) {
 
 }
 
-func createDoctor() {
+func (h Handler) createDoctor(c *gin.Context) {
 
 }
 
-func updateDoctor() {
+func (h Handler) updateDoctor(c *gin.Context) {
 
 }
 
-func deleteDoctor() {
+func (h Handler) deleteDoctor(c *gin.Context) {
 
 }
 
-func listDoctor() {
+func (h Handler) listDoctor(c *gin.Context) {
 
 }
