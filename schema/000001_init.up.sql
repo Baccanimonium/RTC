@@ -66,5 +66,5 @@ CREATE TABLE schedule_event
 (
     id                 serial         not null unique,
     id_schedule        int references schedule (id) on delete cascade not null,
-    id_course          int references course (id) on delete cascade not null
+    id_event           int references event (id) on delete cascade not null
 );
