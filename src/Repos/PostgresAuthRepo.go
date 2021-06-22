@@ -24,15 +24,11 @@ type Auth interface {
 	CreateUser(user UserCreate)
 }
 
-type AuthPostgres struct {
-	db *sqlx.DB
+func NewAuthPostgresRepo(db *sqlx.DB) *Postgres {
+	return &Postgres{db: db}
 }
 
-func NewAuthPostgresRepo(db *sqlx.DB) *AuthPostgres {
-	return &AuthPostgres{db: db}
-}
-
-func (r *AuthPostgres) CreateUser(user UserCreate) (int, error) {
+func (r *Postgres) CreateUser(user UserCreate) (int, error) {
 	var id int
 	query := fmt.Sprintf(
 		"INSERT INTO %s (name, login, password, about, address, phone) values ($1, $2, $3, $4, $5, $6) RETURNING id",
@@ -47,7 +43,7 @@ func (r *AuthPostgres) CreateUser(user UserCreate) (int, error) {
 	return id, nil
 }
 
-func (r *AuthPostgres) GetUser(login, password string) (UserCreate, error) {
+func (r *Postgres) GetUser(login, password string) (UserCreate, error) {
 	var user UserCreate
 
 	query := fmt.Sprintf(

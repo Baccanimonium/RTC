@@ -10,12 +10,18 @@ type Authorization interface {
 	ParseToken(rawToken string) (int, error)
 }
 
+type DoctorService interface {
+	CreateDoctor(doctor Repos.Doctor) (int, error)
+}
+
 type Services struct {
 	Authorization
+	DoctorService
 }
 
 func NewService(repo *Repos.Repo) *Services {
 	return &Services{
 		Authorization: NewAuthService(repo.Authorization),
+		DoctorService: NewDoctorService(repo.DoctorRepo),
 	}
 }
