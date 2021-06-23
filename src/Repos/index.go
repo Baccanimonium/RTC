@@ -15,7 +15,10 @@ type Authorization interface {
 
 type DoctorRepo interface {
 	CreateDoctor(doctor Doctor) (int, error)
+	UpdateDoctor(doctor Doctor, id int) (Doctor, error)
 	GetAllDoctor() ([]Participant, error)
+	GetDoctorById(id int) (Participant, error)
+	DeleteDoctor(id int) error
 }
 
 type Repo struct {

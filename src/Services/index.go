@@ -12,7 +12,10 @@ type Authorization interface {
 
 type DoctorService interface {
 	CreateDoctor(doctor Repos.Doctor) (int, error)
+	UpdateDoctor(doctor Repos.Doctor, id int) (Repos.Doctor, error)
 	GetAllDoctor() ([]Repos.Participant, error)
+	GetDoctorById(id int) (Repos.Participant, error)
+	DeleteDoctor(id int) error
 }
 
 type Services struct {
