@@ -12,7 +12,7 @@ CREATE TABLE users
 CREATE TABLE doctor (
     id                 serial not null unique,
     id_user            int references users (id) on delete cascade not null,
-    salary             money,
+    salary             float8,
     qualifications     varchar(255),
     contacts           varchar(255)
 );

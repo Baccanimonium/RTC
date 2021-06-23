@@ -12,6 +12,7 @@ type Authorization interface {
 
 type DoctorService interface {
 	CreateDoctor(doctor Repos.Doctor) (int, error)
+	GetAllDoctor() ([]Repos.Participant, error)
 }
 
 type Services struct {

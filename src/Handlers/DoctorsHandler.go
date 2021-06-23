@@ -39,5 +39,12 @@ func (h Handler) deleteDoctor(c *gin.Context) {
 }
 
 func (h Handler) listDoctor(c *gin.Context) {
+	doctorList, err := h.services.DoctorService.GetAllDoctor()
 
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, doctorList)
 }

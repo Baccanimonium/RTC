@@ -15,6 +15,7 @@ type Authorization interface {
 
 type DoctorRepo interface {
 	CreateDoctor(doctor Doctor) (int, error)
+	GetAllDoctor() ([]Participant, error)
 }
 
 type Repo struct {
