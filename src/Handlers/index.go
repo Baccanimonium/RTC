@@ -31,6 +31,13 @@ func (h *Handler) InitRouter() *gin.Engine {
 			doctors.PUT("/:id", h.updateDoctor)
 			doctors.DELETE("/:id", h.deleteDoctor)
 		}
+		patient := api.Group("/patient")
+		{
+			patient.POST("/", h.createPatient)
+			patient.GET("/:id", h.getPatient)
+			patient.PUT("/:id", h.UpdatePatient)
+			patient.DELETE("/:id", h.DeletePatient)
+		}
 	}
 
 	return router

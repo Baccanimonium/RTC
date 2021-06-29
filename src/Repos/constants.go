@@ -1,6 +1,7 @@
 package Repos
 
 const (
-	usersTable  = "users"
-	doctorTable = "doctor"
+	usersTable   = "users"
+	doctorTable  = "doctor"
+	patientTable = "patient"
 )
