@@ -24,17 +24,35 @@ type PatientService interface {
 	GetAllPatient() ([]Repos.Participant, error)
 	DeletePatient(id int) error
 }
+type ScheduleService interface {
+	CreateSchedule(schedule Repos.Schedule) (int, error)
+	UpdateSchedule(schedule Repos.Schedule, id int) (Repos.Schedule, error)
+	GetScheduleById(id int) (Repos.Schedule, error)
+	GetAllSchedule() ([]Repos.Schedule, error)
+	DeleteSchedule(id int) error
+}
+type ConsultationService interface {
+	CreateConsultation(consultation Repos.Consultation) (int, error)
+	UpdateConsultation(consultation Repos.Consultation, id int) (Repos.Consultation, error)
+	GetConsultationById(id int) (Repos.Consultation, error)
+	GetAllConsultation() ([]Repos.Consultation, error)
+	DeleteConsultation(id int) error
+}
 
 type Services struct {
 	Authorization
 	DoctorService
 	PatientService
+	ScheduleService
+	ConsultationService
 }
 
 func NewService(repo *Repos.Repo) *Services {
 	return &Services{
-		Authorization:  NewAuthService(repo.Authorization),
-		DoctorService:  NewDoctorService(repo.DoctorRepo),
-		PatientService: NewPatientService(repo.PatientRepo),
+		Authorization:       NewAuthService(repo.Authorization),
+		DoctorService:       NewDoctorService(repo.DoctorRepo),
+		PatientService:      NewPatientService(repo.PatientRepo),
+		ScheduleService:     NewScheduleService(repo.ScheduleRepo),
+		ConsultationService: NewConsultationService(repo.ConsultationRepo),
 	}
 }
