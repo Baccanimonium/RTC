@@ -7,15 +7,15 @@ import (
 	"video-chat-app/src/Repos"
 )
 
-func (h Handler) createPatient(c *gin.Context) {
-	var input Repos.Patient
+func (h Handler) createSchedule(c *gin.Context) {
+	var input Repos.Schedule
 
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	id, err := h.services.PatientService.CreatePatient(input)
+	id, err := h.services.ScheduleService.CreateSchedule(input)
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -27,69 +27,69 @@ func (h Handler) createPatient(c *gin.Context) {
 	})
 }
 
-func (h Handler) getPatient(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid id param")
-		return
-	}
-
-	patient, err := h.services.PatientService.GetPatientById(id)
+func (h Handler) listSchedule(c *gin.Context) {
+	scheduleList, err := h.services.ScheduleService.GetAllSchedule()
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, patient)
+	c.JSON(http.StatusOK, scheduleList)
 }
 
-func (h Handler) UpdatePatient(c *gin.Context) {
+func (h Handler) getSchedule(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		newErrorResponse(c, http.StatusBadRequest, "invalid id param")
 		return
 	}
 
-	var input Repos.Patient
+	schedule, err := h.services.ScheduleService.GetScheduleById(id)
+
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, schedule)
+}
+
+func (h Handler) UpdateSchedule(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid id param")
+		return
+	}
+
+	var input Repos.Schedule
 
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	patient, err := h.services.PatientService.UpdatePatient(input, id)
+	schedule, err := h.services.ScheduleService.UpdateSchedule(input, id)
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, patient)
+	c.JSON(http.StatusOK, schedule)
 }
 
-func (h Handler) DeletePatient(c *gin.Context) {
+func (h Handler) DeleteSchedule(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		newErrorResponse(c, http.StatusBadRequest, "invalid id param")
 		return
 	}
 
-	if err := h.services.PatientService.DeletePatient(id); err != nil {
+	if err := h.services.ScheduleService.DeleteSchedule(id); err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, map[string]interface{}{"id": id})
-}
-
-func (h Handler) listPatient(c *gin.Context) {
-	patientList, err := h.services.PatientService.GetAllPatient()
-
-	if err != nil {
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	c.JSON(http.StatusOK, patientList)
 }

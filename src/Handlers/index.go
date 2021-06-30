@@ -34,10 +34,32 @@ func (h *Handler) InitRouter() *gin.Engine {
 		patient := api.Group("/patient")
 		{
 			patient.POST("/", h.createPatient)
+			patient.GET("/", h.listPatient)
 			patient.GET("/:id", h.getPatient)
 			patient.PUT("/:id", h.UpdatePatient)
 			patient.DELETE("/:id", h.DeletePatient)
 		}
+		schedule := api.Group("/schedule")
+		{
+			schedule.POST("/", h.createSchedule)
+			schedule.GET("/", h.listSchedule)
+			schedule.GET("/:id", h.getSchedule)
+			schedule.PUT("/:id", h.UpdateSchedule)
+			schedule.DELETE("/:id", h.DeleteSchedule)
+			event := schedule.Group(":id/event")
+			{
+				event.POST("/", h.createEvent)
+				event.GET("/", h.listEvent)
+			}
+		}
+
+		event := schedule.Group("/event")
+		{
+			event.GET("/:id", h.getEvent)
+			event.PUT("/:id", h.UpdateEvent)
+			event.DELETE("/:id", h.DeleteEvent)
+		}
+
 	}
 
 	return router

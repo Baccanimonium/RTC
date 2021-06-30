@@ -29,10 +29,28 @@ type PatientRepo interface {
 	DeletePatient(id int) error
 }
 
+type ScheduleRepo interface {
+	CreateSchedule(schedule Schedule) (int, error)
+	UpdateSchedule(schedule Schedule, id int) (Schedule, error)
+	GetScheduleById(id int) (Schedule, error)
+	GetAllSchedule() ([]Schedule, error)
+	DeleteSchedule(id int) error
+}
+
+type EventRepo interface {
+	CreateEvent(idSchedule int, event Event) (int, error)
+	UpdateEvent(event Event, id int) (Event, error)
+	GetEventById(id int) (Event, error)
+	GetAllEvents(idSchedule int) ([]Event, error)
+	DeleteEvent(id int) error
+}
+
 type Repo struct {
 	Authorization
 	DoctorRepo
 	PatientRepo
+	ScheduleRepo
+	EventRepo
 }
 
 func NewRepo(db *sqlx.DB) *Repo {
@@ -40,5 +58,7 @@ func NewRepo(db *sqlx.DB) *Repo {
 		Authorization: NewAuthPostgresRepo(db),
 		DoctorRepo:    NewDoctorPostgresRepo(db),
 		PatientRepo:   NewPatientPostgresRepo(db),
+		ScheduleRepo:  NewSchedulePostgresRepo(db),
+		EventRepo:     NewEventPostgresRepo(db),
 	}
 }
