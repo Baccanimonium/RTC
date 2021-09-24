@@ -1,15 +1,65 @@
-version: "3"
-
+version: "3.4"
 services:
-  posgres-db:
+  api-server:
+    build:
+      dockerfile: Dockerfile.rest_server
+      context: .
+      cache_from:
+        - golang:1.15
+    links:
+      - postgres
+    depends_on:
+      - postgres
+
+    networks:
+      - api-server-network
+    tty: true
+    volumes:
+      - type: bind
+        source: ./
+        target: /app
+    ports:
+      - "8000:8000"
+
+  postgres:
+    image: postgres:12
     restart: always
-    image: postgres:latest
+    networks:
+      - api-server-network
     volumes:
       - ./.database/postgres/data:/var/lib/postgresql/data
     ports:
-      - 5432:5432
+      - "5432:5432"
     environment:
       - POSTGRES_USER=docker
       - POSTGRES_PASSWORD=docker
       - PGDATA=/pgdata
       - POSTGRES_DB=test_db
+
+  migrate:
+    image: migrate/migrate
+    networks:
+      - api-server-network
+    volumes:
+      - .:/schema
+    command: [ "-path", "/migrations", "-database",  "postgres://docker:docker@database:5432/test_db?sslmode=disable", "up" ]
+    links:
+      - postgres
+  mongodb:
+    image: mongo
+    networks:
+      - api-server-network
+    container_name: mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=rootPassXXX
+      - MONGO_INITDB_DATABASE= drug-addicted
+    volumes:
+      - ./.database/mongo/data:/var/lib/mongo/data
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+
+networks:
+  api-server-network:
+    driver: bridge

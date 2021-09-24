@@ -50,7 +50,12 @@ func (s *AuthService) GenerateToken(user Repos.UserLogin) (string, error) {
 	return token.SignedString([]byte(signingSalt))
 }
 
-func (s *AuthService) ParseToken(rawToken string) (int, error) {
+func ParseToken(rawToken string) (int, error) {
+
+	if len(rawToken) == 0 {
+		return 0, errors.New("token is empty")
+	}
+
 	token, err := jwt.ParseWithClaims(rawToken, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid signing method")

@@ -1,13 +1,14 @@
 package Services
 
 import (
+	"go.mongodb.org/mongo-driver/bson"
+	"video-chat-app/src/Models"
 	"video-chat-app/src/Repos"
 )
 
 type Authorization interface {
 	CreateUser(user Repos.UserCreate) (int, error)
 	GenerateToken(user Repos.UserLogin) (string, error)
-	ParseToken(rawToken string) (int, error)
 }
 
 type DoctorService interface {
@@ -16,6 +17,12 @@ type DoctorService interface {
 	GetAllDoctor() ([]Repos.Participant, error)
 	GetDoctorById(id int) (Repos.Participant, error)
 	DeleteDoctor(id int) error
+}
+type UserService interface {
+	UpdateUser(user Repos.UserCreate, id int) (Repos.UserCreate, error)
+	GetAllUser() ([]Repos.UserCreate, error)
+	GetUserById(id int) (Repos.UserCreate, error)
+	DeleteUser(id int) error
 }
 type PatientService interface {
 	CreatePatient(patient Repos.Patient) (int, error)
@@ -41,12 +48,19 @@ type EventService interface {
 	DeleteEvent(id int) error
 }
 
+type MessagesService interface {
+	CreateMessage(newMessage Models.Message) (bson.D, error)
+	GetMessage(messageId interface{}) (bson.D, error)
+}
+
 type Services struct {
 	Authorization
 	DoctorService
 	PatientService
 	ScheduleService
 	EventService
+	UserService
+	MessagesService
 }
 
 func NewService(repo *Repos.Repo) *Services {
@@ -56,5 +70,7 @@ func NewService(repo *Repos.Repo) *Services {
 		PatientService:  NewPatientService(repo.PatientRepo),
 		ScheduleService: NewScheduleService(repo.ScheduleRepo),
 		EventService:    NewEventService(repo.EventRepo),
+		UserService:     NewUserService(repo.UserRepo),
+		MessagesService: NewMessagesService(repo.MessagesRepo),
 	}
 }

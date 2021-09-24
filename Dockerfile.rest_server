@@ -1,0 +1,26 @@
+FROM golang:1.15-alpine as build
+
+RUN apk add --no-cache git
+
+RUN go get github.com/golang/dep/cmd/dep
+
+WORKDIR /app
+
+COPY go.mod .
+
+COPY go.sum .
+
+RUN go mod download
+
+COPY . .
+
+RUN go build ./cmd
+
+FROM scratch
+
+COPY --from=build /app /app
+
+ENTRYPOINT ["/cmd"]
+
+CMD ["--help"]
+

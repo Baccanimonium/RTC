@@ -6,13 +6,15 @@ import (
 )
 
 type UserCreate struct {
-	Id       int    `json:"-" db:"id"`
+	Id       int    `json:"id" db:"id"`
 	Name     string `json:"name" binding:"required"`
 	Login    string `json:"login" binding:"required"`
 	Password string `json:"password" binding:"required"`
 	About    string `json:"about"`
 	Address  string `json:"address"`
 	Phone    string `json:"phone"`
+	Surname  string `json:"surname"`
+	Avatar   string `json:"avatar"`
 }
 
 type UserLogin struct {
@@ -31,10 +33,12 @@ func NewAuthPostgresRepo(db *sqlx.DB) *Postgres {
 func (r *Postgres) CreateUser(user UserCreate) (int, error) {
 	var id int
 	query := fmt.Sprintf(
-		"INSERT INTO %s (name, login, password, about, address, phone) values ($1, $2, $3, $4, $5, $6) RETURNING id",
+		`INSERT INTO %s
+		(name, login, password, about, address, phone, surname)
+		values ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
 		usersTable,
 	)
-	row := r.db.QueryRow(query, user.Name, user.Login, user.Password, user.About, user.Address, user.Phone)
+	row := r.db.QueryRow(query, user.Name, user.Login, user.Password, user.About, user.Address, user.Phone, user.Surname)
 
 	if err := row.Scan(&id); err != nil {
 		return 0, err

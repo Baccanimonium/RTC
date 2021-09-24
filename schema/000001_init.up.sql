@@ -1,7 +1,9 @@
 CREATE TABLE users
 (
     id                 serial       not null unique,
-    name               varchar(255) not null,
+    name               varchar(40),
+    surname            varchar(40),
+    avatar             varchar(40),
     login              varchar(255) not null unique,
     password           varchar(255) not null,
     about              varchar(255),

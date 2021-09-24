@@ -2,10 +2,17 @@ package Repos
 
 import (
 	"github.com/jmoiron/sqlx"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"video-chat-app/src/Models"
 )
 
 type Postgres struct {
 	db *sqlx.DB
+}
+
+type Mongo struct {
+	db *mongo.Database
 }
 
 type Authorization interface {
@@ -19,6 +26,13 @@ type DoctorRepo interface {
 	GetAllDoctor() ([]Participant, error)
 	GetDoctorById(id int) (Participant, error)
 	DeleteDoctor(id int) error
+}
+
+type UserRepo interface {
+	UpdateUser(user UserCreate, id int) (UserCreate, error)
+	GetAllUser() ([]UserCreate, error)
+	GetUserById(id int) (UserCreate, error)
+	DeleteUser(id int) error
 }
 
 type PatientRepo interface {
@@ -45,20 +59,29 @@ type EventRepo interface {
 	DeleteEvent(id int) error
 }
 
+type MessagesRepo interface {
+	CreateMessage(newMessage Models.Message) (bson.D, error)
+	GetMessage(messageId interface{}) (bson.D, error)
+}
+
 type Repo struct {
 	Authorization
 	DoctorRepo
 	PatientRepo
 	ScheduleRepo
 	EventRepo
+	UserRepo
+	MessagesRepo
 }
 
-func NewRepo(db *sqlx.DB) *Repo {
+func NewRepo(db *sqlx.DB, mongoDB *mongo.Database) *Repo {
 	return &Repo{
 		Authorization: NewAuthPostgresRepo(db),
 		DoctorRepo:    NewDoctorPostgresRepo(db),
 		PatientRepo:   NewPatientPostgresRepo(db),
 		ScheduleRepo:  NewSchedulePostgresRepo(db),
 		EventRepo:     NewEventPostgresRepo(db),
+		UserRepo:      NewUserPostgresRepo(db),
+		MessagesRepo:  NewMongoMessagesRepo(mongoDB),
 	}
 }

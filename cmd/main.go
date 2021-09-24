@@ -6,13 +6,18 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 	"video-chat-app"
 	"video-chat-app/src/Handlers"
 	"video-chat-app/src/Repos"
 	"video-chat-app/src/Services"
+	"video-chat-app/src/SocketController"
 )
 
 func main() {
@@ -38,6 +43,24 @@ func main() {
 		logrus.Fatalf("error loading env variables: %s", err.Error())
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:rootPassXXX@127.0.0.1:27017"))
+
+	defer func() {
+		if err = client.Disconnect(ctx); err != nil {
+			panic(err)
+		}
+	}()
+
+	err = client.Ping(ctx, readpref.Primary())
+
+	mongoDB := client.Database("drug-addicted")
+
+	if err != nil {
+		logrus.Errorf("error occured on mongodb connection close: %s", err.Error())
+	}
+
 	db, err := RTC.NewPostgresDB(RTC.Config{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetString("db.port"),
@@ -51,14 +74,22 @@ func main() {
 		logrus.Fatalf("failed to initialize db: %s", err.Error())
 	}
 
-	repos := Repos.NewRepo(db)
+	repos := Repos.NewRepo(db, mongoDB)
 	services := Services.NewService(repos)
 	handlers := Handlers.NewHandler(services)
+
+	// запускаем цикл отправки видео между RTC клиенами
+	SocketController.PolingRTCClientsLoop()
+
+	// инициализируем стейт сокет хаба
+	hub := SocketController.NewHub(mongoDB)
+	//запускаем горутину с прослушиванием каналов сокет хаба
+	go hub.Run()
 
 	srv := new(RTC.Server)
 
 	go func() {
-		if err := srv.Run(viper.GetString("port"), handlers.InitRouter()); err != nil {
+		if err := srv.Run(viper.GetString("port"), handlers.InitRouter(hub)); err != nil {
 			logrus.Fatalf("error occured while running http server: %s", err.Error())
 		}
 	}()

@@ -1,8 +1,11 @@
 package Handlers
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"net/http"
 	"video-chat-app/src/Services"
+	"video-chat-app/src/SocketController"
 )
 
 type Handler struct {
@@ -13,8 +16,19 @@ func NewHandler(services *Services.Services) *Handler {
 	return &Handler{services: services}
 }
 
-func (h *Handler) InitRouter() *gin.Engine {
+func (h *Handler) InitRouter(hub *SocketController.Hub) *gin.Engine {
 	router := gin.New()
+	router.Use(cors.Default())
+	router.GET("/websocket", hub.OnNewSocketClient)
+
+	router.StaticFS("/file", http.Dir("public"))
+
+	//router.NoRoute(func(c *gin.Context) {
+	//   c.File("./public/index.html")
+	//})
+
+	router.POST("/upload", h.handleUploadFile)
+
 	auth := router.Group("/auth")
 	{
 		auth.POST("/sign-up", h.signUp)
@@ -23,6 +37,23 @@ func (h *Handler) InitRouter() *gin.Engine {
 
 	api := router.Group("/api", h.userIdentity)
 	{
+		api.StaticFS("/file", http.Dir("public"))
+
+		api.POST("/upload", h.handleUploadFile)
+
+		channels := api.Group("/channels")
+		{
+			channels.GET("/", hub.GetAllChannelsBelongsToUser)
+		}
+		users := api.Group("/users")
+		{
+			users.POST("/", h.signUp)
+			users.GET("/", h.listUser)
+			users.GET("/profile", h.getUserProfile)
+			users.GET("/:id", h.getUser)
+			users.PUT("/:id", h.updateUser)
+			users.DELETE("/:id", h.deleteUser)
+		}
 		doctors := api.Group("/doctors")
 		{
 			doctors.POST("/", h.createDoctor)
