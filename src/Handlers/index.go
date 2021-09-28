@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"video-chat-app/src/Services"
-	"video-chat-app/src/SocketController"
+	"video-chat-app/src/SocketHandlers"
 )
 
 type Handler struct {
@@ -16,10 +16,11 @@ func NewHandler(services *Services.Services) *Handler {
 	return &Handler{services: services}
 }
 
-func (h *Handler) InitRouter(hub *SocketController.Hub) *gin.Engine {
+func (h *Handler) InitRouter(socketFactory *SocketHandlers.SocketClientFactory) *gin.Engine {
 	router := gin.New()
 	router.Use(cors.Default())
-	router.GET("/websocket", hub.OnNewSocketClient)
+	router.GET("/websocket", socketFactory.OnNewSocketClient)
+	//router.GET("/websocket", socketFactory.OnNewSocketClient)
 
 	router.StaticFS("/file", http.Dir("public"))
 
@@ -43,7 +44,11 @@ func (h *Handler) InitRouter(hub *SocketController.Hub) *gin.Engine {
 
 		channels := api.Group("/channels")
 		{
-			channels.GET("/", hub.GetAllChannelsBelongsToUser)
+			channels.GET("/", h.GetAllChannelsBelongsToUser)
+		}
+		messages := api.Group("/messages")
+		{
+			messages.GET("/:channelId", h.GetAllMessagesBelongsToChannel)
 		}
 		users := api.Group("/users")
 		{

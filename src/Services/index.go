@@ -2,6 +2,7 @@ package Services
 
 import (
 	"go.mongodb.org/mongo-driver/bson"
+	RTC "video-chat-app"
 	"video-chat-app/src/Models"
 	"video-chat-app/src/Repos"
 )
@@ -28,7 +29,7 @@ type PatientService interface {
 	CreatePatient(patient Repos.Patient) (int, error)
 	UpdatePatient(doctor Repos.Patient, id int) (Repos.Patient, error)
 	GetPatientById(id int) (Repos.Participant, error)
-	GetAllPatient() ([]Repos.Participant, error)
+	GetAllPatient(userId int) ([]Repos.Participant, error)
 	DeletePatient(id int) error
 }
 
@@ -49,8 +50,17 @@ type EventService interface {
 }
 
 type MessagesService interface {
-	CreateMessage(newMessage Models.Message) (bson.D, error)
-	GetMessage(messageId interface{}) (bson.D, error)
+	CreateMessage(newMessage Models.CreateMessage) (bson.M, error)
+	GetMessage(messageId interface{}) (bson.M, error)
+	GetMessages(channelId string, userId interface{}) ([]Models.Message, error)
+}
+
+type ChannelsService interface {
+	CreateChannel(userId int, payload Models.Channel) (bson.M, error)
+	DeleteChannel(userId int, payload Models.Channel) (bson.M, error)
+	GetChannelByID(documentId interface{}) (bson.M, error)
+	GetChannelByParticipants(userId int, payload map[string]interface{}) (Models.Channel, error)
+	GetAllChannelsBelongsToUser(userId int) ([]Models.Channel, error)
 }
 
 type Services struct {
@@ -61,9 +71,10 @@ type Services struct {
 	EventService
 	UserService
 	MessagesService
+	ChannelsService
 }
 
-func NewService(repo *Repos.Repo) *Services {
+func NewService(repo *Repos.Repo, broadcast chan RTC.BroadcastingMessage) *Services {
 	return &Services{
 		Authorization:   NewAuthService(repo.Authorization),
 		DoctorService:   NewDoctorService(repo.DoctorRepo),
@@ -71,6 +82,7 @@ func NewService(repo *Repos.Repo) *Services {
 		ScheduleService: NewScheduleService(repo.ScheduleRepo),
 		EventService:    NewEventService(repo.EventRepo),
 		UserService:     NewUserService(repo.UserRepo),
-		MessagesService: NewMessagesService(repo.MessagesRepo),
+		MessagesService: NewMessagesService(repo.MessagesRepo, broadcast),
+		ChannelsService: NewChannelsService(repo.ChannelsRepo, broadcast),
 	}
 }

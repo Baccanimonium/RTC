@@ -5,17 +5,22 @@ import (
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
+	"video-chat-app/src"
 	"video-chat-app/src/Repos"
 )
 
 func (h Handler) createPatient(c *gin.Context) {
 	var input Repos.Patient
+	userId, _ := c.Get(src.UserContext)
 
 	if err := c.BindJSON(&input); err != nil {
 		logrus.Print("fail to get patient", err.Error())
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
+	// adding current userId from token
+	input.IdCurrentDoctor = userId.(int)
+
 	id, err := h.services.PatientService.CreatePatient(input)
 
 	if err != nil {
@@ -85,7 +90,8 @@ func (h Handler) DeletePatient(c *gin.Context) {
 }
 
 func (h Handler) listPatient(c *gin.Context) {
-	patientList, err := h.services.PatientService.GetAllPatient()
+	userId, _ := c.Get(src.UserContext)
+	patientList, err := h.services.PatientService.GetAllPatient(userId.(int))
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())

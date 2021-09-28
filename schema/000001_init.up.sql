@@ -13,7 +13,7 @@ CREATE TABLE users
 
 CREATE TABLE doctor (
     id                 serial not null unique,
-    id_user            int references users (id) on delete cascade not null,
+    id_user            int references users (id) on delete cascade not null unique,
     salary             float8,
     qualifications     varchar(255),
     contacts           varchar(255)
@@ -21,7 +21,8 @@ CREATE TABLE doctor (
 
 CREATE TABLE patient (
     id                 serial not null unique,
-    id_user            int references users (id) on delete cascade not null,
+    id_user            int references users (id) on delete cascade not null unique,
+    id_current_doctor  int references users (id) on delete set null,
     description        varchar(500),
     recovered          boolean      not null default false
 );

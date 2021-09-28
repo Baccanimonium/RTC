@@ -6,11 +6,26 @@ import (
 )
 
 type Message struct {
-	Id        primitive.ObjectID  `bson:"_id" json:"id"`
-	Creator   int32               `bson:"creator" json:"creator"`
-	ChannelId primitive.ObjectID  `bson:"channelId" json:"channelId"`
-	Created   primitive.Timestamp `bson:"created" json:"created"`
-	Updated   primitive.Timestamp `bson:"updated" json:"updated"`
-	Text      string              `bson:"text" json:"text"`
-	Files     bson.A              `bson:"files" json:"files"`
+	Id        primitive.ObjectID `bson:"_id" json:"_id"`
+	Creator   int32              `bson:"creator" json:"creator"`
+	ChannelId primitive.ObjectID `bson:"channelId" json:"channelId"`
+	Created   string             `bson:"created" json:"created"`
+	Updated   string             `bson:"updated" json:"updated"`
+	Text      string             `bson:"text" json:"text"`
+	Files     bson.A             `bson:"files,omitempty" json:"files"`
+}
+
+type CreateMessage struct {
+	Creator   int32              `bson:"creator" json:"creator"`
+	ChannelId primitive.ObjectID `bson:"channelId" json:"channelId"`
+	Created   string             `bson:"created" json:"created"`
+	Updated   string             `bson:"updated" json:"updated"`
+	Text      string             `bson:"text" json:"text"`
+	Files     bson.A             `bson:"files,omitempty" json:"files" `
+}
+
+type DeleteMessage struct {
+	Id        primitive.ObjectID `bson:"_id" json:"_id"`
+	ChannelId primitive.ObjectID `bson:"channelId" json:"channelId"`
+	Creator   int32              `bson:"creator" json:"creator"`
 }

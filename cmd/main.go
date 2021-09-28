@@ -17,7 +17,7 @@ import (
 	"video-chat-app/src/Handlers"
 	"video-chat-app/src/Repos"
 	"video-chat-app/src/Services"
-	"video-chat-app/src/SocketController"
+	"video-chat-app/src/SocketHandlers"
 )
 
 func main() {
@@ -73,23 +73,24 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("failed to initialize db: %s", err.Error())
 	}
-
+	broadcastChan := make(chan RTC.BroadcastingMessage)
 	repos := Repos.NewRepo(db, mongoDB)
-	services := Services.NewService(repos)
+	// инициализируем стейт сокет хаба
+	socketHub := SocketHandlers.NewHub(repos, broadcastChan)
+	services := Services.NewService(repos, broadcastChan)
+	socketClientFactory := SocketHandlers.NewSocketClientFactory(services, socketHub)
 	handlers := Handlers.NewHandler(services)
 
 	// запускаем цикл отправки видео между RTC клиенами
-	SocketController.PolingRTCClientsLoop()
+	//SocketController.PolingRTCClientsLoop()
 
-	// инициализируем стейт сокет хаба
-	hub := SocketController.NewHub(mongoDB)
 	//запускаем горутину с прослушиванием каналов сокет хаба
-	go hub.Run()
+	go socketHub.Run()
 
 	srv := new(RTC.Server)
 
 	go func() {
-		if err := srv.Run(viper.GetString("port"), handlers.InitRouter(hub)); err != nil {
+		if err := srv.Run(viper.GetString("port"), handlers.InitRouter(socketClientFactory)); err != nil {
 			logrus.Fatalf("error occured while running http server: %s", err.Error())
 		}
 	}()

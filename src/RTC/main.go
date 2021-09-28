@@ -1,4 +1,4 @@
-package SocketController
+package RTC
 
 import (
 	"encoding/json"

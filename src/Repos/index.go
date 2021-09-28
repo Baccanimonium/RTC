@@ -39,7 +39,7 @@ type PatientRepo interface {
 	CreatePatient(patient Patient) (int, error)
 	UpdatePatient(patient Patient, id int) (Patient, error)
 	GetPatientById(id int) (Participant, error)
-	GetAllPatient() ([]Participant, error)
+	GetAllPatient(userId int) ([]Participant, error)
 	DeletePatient(id int) error
 }
 
@@ -60,8 +60,19 @@ type EventRepo interface {
 }
 
 type MessagesRepo interface {
-	CreateMessage(newMessage Models.Message) (bson.D, error)
-	GetMessage(messageId interface{}) (bson.D, error)
+	CreateMessage(newMessage Models.CreateMessage) (bson.M, error)
+	GetMessage(messageId interface{}) (bson.M, error)
+	GetMessages(channelId string) ([]Models.Message, error)
+	UpdateMessage(updatedMessage Models.Message) (bson.M, error)
+	DeleteMessage(message Models.DeleteMessage) (bson.M, error)
+}
+
+type ChannelsRepo interface {
+	CreateChannel(userId int, payload Models.Channel) (bson.M, error)
+	DeleteChannel(userId int, channel Models.Channel) (bson.M, error)
+	GetChannelByID(documentId interface{}) (bson.M, error)
+	GetChannelByParticipants(userId int, payload map[string]interface{}) (Models.Channel, error)
+	GetAllChannelsBelongsToUser(creatorId int) ([]Models.Channel, error)
 }
 
 type Repo struct {
@@ -72,6 +83,7 @@ type Repo struct {
 	EventRepo
 	UserRepo
 	MessagesRepo
+	ChannelsRepo
 }
 
 func NewRepo(db *sqlx.DB, mongoDB *mongo.Database) *Repo {
@@ -83,5 +95,6 @@ func NewRepo(db *sqlx.DB, mongoDB *mongo.Database) *Repo {
 		EventRepo:     NewEventPostgresRepo(db),
 		UserRepo:      NewUserPostgresRepo(db),
 		MessagesRepo:  NewMongoMessagesRepo(mongoDB),
+		ChannelsRepo:  NewMongoChannelsRepo(mongoDB),
 	}
 }

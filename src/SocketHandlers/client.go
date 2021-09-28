@@ -1,12 +1,12 @@
-package SocketController
+package SocketHandlers
 
 import (
-	"bytes"
 	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"log"
-	"net/http"
 	"time"
+	"video-chat-app/src/Services"
 
 	"github.com/gorilla/websocket"
 )
@@ -30,20 +30,12 @@ var (
 	space   = []byte{' '}
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
-
-type SocketCommError struct {
-	Type      string      `json:"type" binding:"required"`
-	MessageId interface{} `json:"messageId" binding:"required"`
-	Message   string      `json:"message"`
-}
-
-// Client is a middleman between the websocket connection and the hub.
 type Client struct {
+	//
 	hub *Hub
+
+	// services
+	services *Services.Services
 
 	// The websocket connection.
 	conn *websocket.Conn
@@ -54,11 +46,39 @@ type Client struct {
 	userId int
 }
 
-// readPump pumps messages from the websocket connection to the hub.
-//
-// The application runs readPump in a per-connection goroutine. The application
-// ensures that there is at most one reader on a connection by executing all
-// reads from this goroutine.
+type SocketClientFactory struct {
+	services *Services.Services
+	hub      *Hub
+}
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+func NewSocketClientFactory(services *Services.Services, hub *Hub) *SocketClientFactory {
+	return &SocketClientFactory{
+		hub:      hub,
+		services: services,
+	}
+}
+
+func (s SocketClientFactory) OnNewSocketClient(context *gin.Context) {
+	//logrus.Print(context.Get(RTC.UserContext))
+	userId, err := Services.ParseToken(context.Query("authorization"))
+	conn, err := upgrader.Upgrade(context.Writer, context.Request, nil)
+	if err != nil {
+		logrus.Print(err)
+		return
+	}
+	client := &Client{hub: s.hub, conn: conn, send: make(chan []byte, 256), userId: userId, services: s.services}
+	client.hub.register <- client
+	// Allow collection of memory referenced by the caller by doing all work in
+	// new goroutines.
+	go client.writePump()
+	go client.readPump()
+}
+
 func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
@@ -71,7 +91,10 @@ func (c *Client) readPump() {
 		_, message, err := c.conn.ReadMessage()
 		var m map[string]interface{}
 		json.Unmarshal(message, &m)
-		logrus.Print("event type: ", m["type"], "messageId ", m["messageId"])
+		var response = make(map[string]interface{})
+		response["messageId"] = m["messageId"]
+		rawJson, _ := json.Marshal(m["payload"])
+		logrus.Print("socket", response)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
@@ -80,24 +103,29 @@ func (c *Client) readPump() {
 		}
 
 		switch m["type"] {
-		case "createChatChannel":
-			// channel, err := c.hub.createChannel(c.userId, m["payload"].(map[string]interface{}))
-			//
-			//if err != nil {
-			//	message, err := json.Marshal(&SocketCommError{
-			//		MessageId: m["messageId"],
-			//		Type:      "error",
-			//		Message: err.Error(),
-			//	})
-			//	c.send <- message
-			//}
+		case createChatChannel:
+			payload, err := c.CreateChannel(c.userId, rawJson)
+			if err != nil {
+				response["error"] = err.Error()
+			}
+			response["payload"] = payload
+			break
+
+		case createChatMessage:
+			payload, err := c.createMessage(rawJson)
+
+			if err != nil {
+				response["error"] = err.Error()
+			}
+			response["payload"] = payload
 			break
 
 		default:
-			message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-			c.hub.broadcast <- message
+			//message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+			//c.hub.broadcast <- message
 		}
-
+		rawMessage, err := json.Marshal(response)
+		c.send <- rawMessage
 	}
 }
 
@@ -145,20 +173,4 @@ func (c *Client) writePump() {
 			}
 		}
 	}
-}
-
-// serveWs handles websocket requests from the peer.
-func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
-	client.hub.register <- client
-
-	// Allow collection of memory referenced by the caller by doing all work in
-	// new goroutines.
-	go client.writePump()
-	go client.readPump()
 }

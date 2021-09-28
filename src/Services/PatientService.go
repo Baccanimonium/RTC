@@ -14,8 +14,8 @@ func (s *PatientRepo) CreatePatient(patient Repos.Patient) (int, error) {
 	return s.repo.CreatePatient(patient)
 }
 
-func (s *PatientRepo) GetAllPatient() ([]Repos.Participant, error) {
-	return s.repo.GetAllPatient()
+func (s *PatientRepo) GetAllPatient(userId int) ([]Repos.Participant, error) {
+	return s.repo.GetAllPatient(userId)
 }
 
 func (s *PatientRepo) GetPatientById(id int) (Repos.Participant, error) {
