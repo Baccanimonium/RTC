@@ -34,11 +34,11 @@ type PatientService interface {
 }
 
 type ConsultationService interface {
-	CreateConsultation(consultation Repos.Consultation) (int, error)
-	UpdateConsultation(consultation Repos.Consultation, id int) (Repos.Consultation, error)
-	GetConsultationById(id int) (Repos.Consultation, error)
-	GetAllConsultation() ([]Repos.Consultation, error)
-	DeleteConsultation(id int) error
+	CreateConsultation(idSchedule int, consultation Repos.Consultation) (Repos.Consultation, error)
+	UpdateConsultation(consultation Repos.Consultation, idSchedule, idConsultation int) (Repos.Consultation, error)
+	GetConsultationById(idSchedule, idConsultation int) (Repos.Consultation, error)
+	GetAllConsultation(idSchedule int) ([]Repos.Consultation, error)
+	DeleteConsultation(idSchedule, idConsultation int) error
 }
 
 type ScheduleService interface {
@@ -85,14 +85,14 @@ type Services struct {
 
 func NewService(repo *Repos.Repo, broadcast chan RTC.BroadcastingMessage) *Services {
 	return &Services{
-		Authorization:   NewAuthService(repo.Authorization),
-		DoctorService:   NewDoctorService(repo.DoctorRepo),
-		PatientService:  NewPatientService(repo.PatientRepo),
-		ScheduleService: NewScheduleService(repo.ScheduleRepo),
+		Authorization:       NewAuthService(repo.Authorization),
+		DoctorService:       NewDoctorService(repo.DoctorRepo),
+		PatientService:      NewPatientService(repo.PatientRepo),
+		ScheduleService:     NewScheduleService(repo.ScheduleRepo),
 		ConsultationService: NewConsultationService(repo.ConsultationRepo),
-		EventService:    NewEventService(repo.EventRepo),
-		UserService:     NewUserService(repo.UserRepo),
-		MessagesService: NewMessagesService(repo.MessagesRepo, broadcast),
-		ChannelsService: NewChannelsService(repo.ChannelsRepo, broadcast),
+		EventService:        NewEventService(repo.EventRepo),
+		UserService:         NewUserService(repo.UserRepo),
+		MessagesService:     NewMessagesService(repo.MessagesRepo, broadcast),
+		ChannelsService:     NewChannelsService(repo.ChannelsRepo, broadcast),
 	}
 }

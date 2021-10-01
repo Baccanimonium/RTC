@@ -19,7 +19,7 @@ func NewConsultationPostgresRepo(db *sqlx.DB) *Postgres {
 	return &Postgres{db: db}
 }
 
-func (r *Postgres) CreateConsultation(consultation Consultation) (int, error) {
+func (r *Postgres) CreateConsultation(idSchedule int, consultation Repos.Consultation) (Repos.Consultation, error) {
 	var id int
 
 	query := fmt.Sprintf(
