@@ -34,7 +34,7 @@ type PatientService interface {
 }
 
 type ScheduleService interface {
-	CreateSchedule(schedule Repos.Schedule) (int, error)
+	CreateSchedule(schedule Repos.Schedule) (Repos.Schedule, error)
 	UpdateSchedule(schedule Repos.Schedule, id int) (Repos.Schedule, error)
 	GetScheduleById(id int) (Repos.Schedule, error)
 	GetAllSchedule() ([]Repos.Schedule, error)

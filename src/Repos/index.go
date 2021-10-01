@@ -44,7 +44,7 @@ type PatientRepo interface {
 }
 
 type ScheduleRepo interface {
-	CreateSchedule(schedule Schedule) (int, error)
+	CreateSchedule(schedule Schedule) (Schedule, error)
 	UpdateSchedule(schedule Schedule, id int) (Schedule, error)
 	GetScheduleById(id int) (Schedule, error)
 	GetAllSchedule() ([]Schedule, error)

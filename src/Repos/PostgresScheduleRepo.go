@@ -16,17 +16,17 @@ func NewSchedulePostgresRepo(db *sqlx.DB) *Postgres {
 	return &Postgres{db: db}
 }
 
-func (r *Postgres) CreateSchedule(schedule Schedule) (int, error) {
-	var id int
+func (r *Postgres) CreateSchedule(schedule Schedule) (Schedule, error) {
+	var id Schedule
 
 	query := fmt.Sprintf(
-		"INSERT INTO %s (id_user, title, description) values ($1, $2, $3) RETURNING id",
+		"INSERT INTO %s (id_user, title, description) values ($1, $2, $3) RETURNING *",
 		scheduleTable,
 	)
 	row := r.db.QueryRow(query, schedule.IdUser, schedule.Title, schedule.Description)
 
 	if err := row.Scan(&id); err != nil {
-		return 0, err
+		return Schedule{}, err
 	}
 
 	return id, nil
@@ -58,7 +58,7 @@ func (r *Postgres) GetScheduleById(id int) (Schedule, error) {
 }
 
 func (r *Postgres) GetAllSchedule() ([]Schedule, error) {
-	var schedules []Schedule
+	var schedules = make([]Schedule, 0)
 
 	query := fmt.Sprintf(
 		`SELECT id, id_user, title, description FROM %s`,
