@@ -33,6 +33,14 @@ type PatientService interface {
 	DeletePatient(id int) error
 }
 
+type ConsultationService interface {
+	CreateConsultation(consultation Repos.Consultation) (int, error)
+	UpdateConsultation(consultation Repos.Consultation, id int) (Repos.Consultation, error)
+	GetConsultationById(id int) (Repos.Consultation, error)
+	GetAllConsultation() ([]Repos.Consultation, error)
+	DeleteConsultation(id int) error
+}
+
 type ScheduleService interface {
 	CreateSchedule(schedule Repos.Schedule) (Repos.Schedule, error)
 	UpdateSchedule(schedule Repos.Schedule, id int) (Repos.Schedule, error)
@@ -68,6 +76,7 @@ type Services struct {
 	DoctorService
 	PatientService
 	ScheduleService
+	ConsultationService
 	EventService
 	UserService
 	MessagesService
@@ -80,6 +89,7 @@ func NewService(repo *Repos.Repo, broadcast chan RTC.BroadcastingMessage) *Servi
 		DoctorService:   NewDoctorService(repo.DoctorRepo),
 		PatientService:  NewPatientService(repo.PatientRepo),
 		ScheduleService: NewScheduleService(repo.ScheduleRepo),
+		ConsultationService: NewConsultationService(repo.ConsultationRepo),
 		EventService:    NewEventService(repo.EventRepo),
 		UserService:     NewUserService(repo.UserRepo),
 		MessagesService: NewMessagesService(repo.MessagesRepo, broadcast),

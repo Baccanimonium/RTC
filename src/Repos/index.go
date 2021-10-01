@@ -51,6 +51,14 @@ type ScheduleRepo interface {
 	DeleteSchedule(id int) error
 }
 
+type ConsultationRepo interface {
+	CreateConsultation(consultation Consultation) (int, error)
+	GetConsultationById(id int) (Consultation, error)
+	GetAllConsultation() ([]Consultation, error)
+	UpdateConsultation(consultation Consultation, id int) (Consultation, error)
+	DeleteConsultation(id int) error
+}
+
 type EventRepo interface {
 	CreateEvent(idSchedule int, event Event) (int, error)
 	UpdateEvent(event Event, id int) (Event, error)
@@ -80,6 +88,7 @@ type Repo struct {
 	DoctorRepo
 	PatientRepo
 	ScheduleRepo
+	ConsultationRepo
 	EventRepo
 	UserRepo
 	MessagesRepo
@@ -92,6 +101,7 @@ func NewRepo(db *sqlx.DB, mongoDB *mongo.Database) *Repo {
 		DoctorRepo:    NewDoctorPostgresRepo(db),
 		PatientRepo:   NewPatientPostgresRepo(db),
 		ScheduleRepo:  NewSchedulePostgresRepo(db),
+		ConsultationRepo: NewConsultationPostgresRepo(db),
 		EventRepo:     NewEventPostgresRepo(db),
 		UserRepo:      NewUserPostgresRepo(db),
 		MessagesRepo:  NewMongoMessagesRepo(mongoDB),
