@@ -84,7 +84,7 @@ func (r *Postgres) GetEventById(id int) (Event, error) {
 }
 
 func (r *Postgres) GetAllEvents(idSchedule int) ([]Event, error) {
-	var schedules []Event
+	var schedules = make([]Event, 0)
 
 	query := fmt.Sprintf(
 		`SELECT

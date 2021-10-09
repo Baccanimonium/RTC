@@ -86,16 +86,11 @@ func (h *Handler) InitRouter(socketFactory *SocketHandlers.SocketClientFactory) 
 			{
 				event.POST("/", h.createEvent)
 				event.GET("/", h.listEvent)
+				event.GET("/:event_id", h.getEvent)
+				event.PUT("/:event_id", h.UpdateEvent)
+				event.DELETE("/:event_id", h.DeleteEvent)
 			}
 		}
-
-		event := schedule.Group("/event")
-		{
-			event.GET("/:id", h.getEvent)
-			event.PUT("/:id", h.UpdateEvent)
-			event.DELETE("/:id", h.DeleteEvent)
-		}
-
 	}
 
 	return router

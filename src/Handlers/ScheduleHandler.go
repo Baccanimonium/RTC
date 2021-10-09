@@ -15,16 +15,14 @@ func (h Handler) createSchedule(c *gin.Context) {
 		return
 	}
 
-	id, err := h.services.ScheduleService.CreateSchedule(input)
+	schedule, err := h.services.ScheduleService.CreateSchedule(input)
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
-		"id": id,
-	})
+	c.JSON(http.StatusOK, schedule)
 }
 
 func (h Handler) listSchedule(c *gin.Context) {

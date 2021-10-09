@@ -10,7 +10,7 @@ func NewScheduleService(repo Repos.ScheduleRepo) *ScheduleRepo {
 	return &ScheduleRepo{repo: repo}
 }
 
-func (s *ScheduleRepo) CreateSchedule(schedule Repos.Schedule) (int, error) {
+func (s *ScheduleRepo) CreateSchedule(schedule Repos.Schedule) (Repos.Schedule, error) {
 	return s.repo.CreateSchedule(schedule)
 }
 
