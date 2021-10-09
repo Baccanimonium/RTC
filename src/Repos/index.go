@@ -52,10 +52,10 @@ type ScheduleRepo interface {
 }
 
 type ConsultationRepo interface {
-	CreateConsultation(idSchedule int, consultation Repos.Consultation) (Repos.Consultation, error)
-	UpdateConsultation(consultation Repos.Consultation, idSchedule, idConsultation int) (Repos.Consultation, error)
-	GetConsultationById(idSchedule, idConsultation int) (Repos.Consultation, error)
-	GetAllConsultation(idSchedule int) ([]Repos.Consultation, error)
+	CreateConsultation(idSchedule int, consultation Consultation) (Consultation, error)
+	UpdateConsultation(consultation Consultation, id int) (Consultation, error)
+	GetConsultationById(idSchedule, idConsultation int) (Consultation, error)
+	GetAllConsultation(idSchedule int) ([]Consultation, error)
 	DeleteConsultation(idSchedule, idConsultation int) error
 }
 

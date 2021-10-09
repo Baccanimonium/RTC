@@ -35,7 +35,7 @@ type PatientService interface {
 
 type ConsultationService interface {
 	CreateConsultation(idSchedule int, consultation Repos.Consultation) (Repos.Consultation, error)
-	UpdateConsultation(consultation Repos.Consultation, idSchedule, idConsultation int) (Repos.Consultation, error)
+	UpdateConsultation(consultation Repos.Consultation, id int) (Repos.Consultation, error)
 	GetConsultationById(idSchedule, idConsultation int) (Repos.Consultation, error)
 	GetAllConsultation(idSchedule int) ([]Repos.Consultation, error)
 	DeleteConsultation(idSchedule, idConsultation int) error

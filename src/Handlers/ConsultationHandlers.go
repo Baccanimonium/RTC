@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
+	"video-chat-app/src/Repos"
 )
 
 func (h Handler) getConsultation(c *gin.Context) {
@@ -53,11 +54,11 @@ func (h Handler) createConsultation(c *gin.Context) {
 }
 
 func (h Handler) updateConsultation(c *gin.Context) {
-	idSchedule, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid idSchedule param")
-		return
-	}
+	//idSchedule, err := strconv.Atoi(c.Param("id"))
+	//if err != nil {
+	//	newErrorResponse(c, http.StatusBadRequest, "invalid idSchedule param")
+	//	return
+	//}
 	idConsultation, err := strconv.Atoi(c.Param("ct_id"))
 	if err != nil {
 		newErrorResponse(c, http.StatusBadRequest, "invalid idConsultation param")
@@ -71,7 +72,7 @@ func (h Handler) updateConsultation(c *gin.Context) {
 		return
 	}
 
-	consultation, err := h.services.ConsultationService.UpdateConsultation(input, idSchedule, idConsultation)
+	consultation, err := h.services.ConsultationService.UpdateConsultation(input, idConsultation)
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -115,5 +116,5 @@ func (h Handler) deleteConsultation(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{"id": id})
+	c.JSON(http.StatusOK, map[string]interface{}{"id": idConsultation})
 }

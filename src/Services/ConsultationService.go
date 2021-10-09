@@ -21,8 +21,8 @@ func (s *ConsultationRepo) GetAllConsultation(idSchedule int) ([]Repos.Consultat
 func (s *ConsultationRepo) GetConsultationById(idSchedule, idConsultation int) (Repos.Consultation, error) {
 	return s.repo.GetConsultationById(idSchedule, idConsultation)
 }
-func (s *ConsultationRepo) UpdateConsultation(consultation Repos.Consultation, idSchedule, idConsultation int) (Repos.Consultation, error) {
-	return s.repo.UpdateConsultation(consultation, idSchedule, idConsultation)
+func (s *ConsultationRepo) UpdateConsultation(consultation Repos.Consultation, id int) (Repos.Consultation, error) {
+	return s.repo.UpdateConsultation(consultation, id)
 }
 
 func (s *ConsultationRepo) DeleteConsultation(idSchedule, idConsultation int) error {
