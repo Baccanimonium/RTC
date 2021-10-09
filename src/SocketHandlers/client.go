@@ -3,9 +3,13 @@ package SocketHandlers
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/pion/webrtc/v3"
 	"github.com/sirupsen/logrus"
 	"log"
+	"net/http"
 	"time"
+	RTC2 "video-chat-app"
+	"video-chat-app/src/RTC"
 	"video-chat-app/src/Services"
 
 	"github.com/gorilla/websocket"
@@ -22,7 +26,7 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
-	maxMessageSize = 512
+	maxMessageSize = 5120
 )
 
 var (
@@ -43,6 +47,8 @@ type Client struct {
 	// Buffered channel of outbound messages.
 	send chan []byte
 
+	pc *webrtc.PeerConnection
+
 	userId int
 }
 
@@ -52,8 +58,9 @@ type SocketClientFactory struct {
 }
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool { return true },
+	//ReadBufferSize:  1024,
+	//WriteBufferSize: 1024,
 }
 
 func NewSocketClientFactory(services *Services.Services, hub *Hub) *SocketClientFactory {
@@ -67,11 +74,27 @@ func (s SocketClientFactory) OnNewSocketClient(context *gin.Context) {
 	//logrus.Print(context.Get(RTC.UserContext))
 	userId, err := Services.ParseToken(context.Query("authorization"))
 	conn, err := upgrader.Upgrade(context.Writer, context.Request, nil)
+
 	if err != nil {
 		logrus.Print(err)
 		return
 	}
-	client := &Client{hub: s.hub, conn: conn, send: make(chan []byte, 256), userId: userId, services: s.services}
+
+	pc, err := RTC.CreatePeerCon(conn)
+
+	if err != nil {
+		logrus.Print(err)
+		return
+	}
+
+	client := &Client{
+		hub:      s.hub,
+		conn:     conn,
+		send:     make(chan []byte, 256),
+		userId:   userId,
+		services: s.services,
+		pc:       pc,
+	}
 	client.hub.register <- client
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
@@ -83,24 +106,32 @@ func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
+		// When this frame returns close the PeerConnection
+		c.pc.Close() //nolint
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		_, message, err := c.conn.ReadMessage()
-		var m map[string]interface{}
-		json.Unmarshal(message, &m)
-		var response = make(map[string]interface{})
-		response["messageId"] = m["messageId"]
-		rawJson, _ := json.Marshal(m["payload"])
-		logrus.Print("socket", response)
+
 		if err != nil {
+			logrus.Print(err.Error())
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
 			break
 		}
+
+		var m map[string]interface{}
+		err = json.Unmarshal(message, &m)
+		if err != nil {
+			logrus.Print(err.Error())
+			break
+		}
+		var response = make(map[string]interface{})
+		response["messageId"] = m["messageId"]
+		rawJson, _ := json.Marshal(m["payload"])
 
 		switch m["type"] {
 		case createChatChannel:
@@ -120,12 +151,24 @@ func (c *Client) readPump() {
 			response["payload"] = payload
 			break
 
+		case RTC2.RTCCandidate:
+			RTC.OnCandidate(c.pc, m["payload"].(string))
+			break
+
+		case RTC2.RTCAnswer:
+			RTC.OnAnswer(c.pc, m["payload"].(string))
+			break
+
 		default:
 			//message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 			//c.hub.broadcast <- message
 		}
-		rawMessage, err := json.Marshal(response)
-		c.send <- rawMessage
+		if m["messageId"] != nil {
+			rawMessage, err := json.Marshal(response)
+			if err == nil {
+				c.send <- rawMessage
+			}
+		}
 	}
 }
 
@@ -139,6 +182,8 @@ func (c *Client) writePump() {
 	defer func() {
 		ticker.Stop()
 		c.conn.Close()
+		// When this frame returns close the PeerConnection
+		defer c.pc.Close() //nolint
 	}()
 	for {
 		select {

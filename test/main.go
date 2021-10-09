@@ -1,9 +1,13 @@
-package RTC
+package main
 
 import (
 	"encoding/json"
+	"flag"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"sync"
+	"text/template"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -12,9 +16,15 @@ import (
 )
 
 var (
+	addr     = flag.String("addr", ":8000", "http service address")
+	upgrader = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
+	indexTemplate = &template.Template{}
+
 	// lock for peerConnections and trackLocals
 	listLock        sync.RWMutex
-	peerConnections []PeerConnectionState
+	peerConnections []peerConnectionState
 	trackLocals     map[string]*webrtc.TrackLocalStaticRTP
 )
 
@@ -23,14 +33,35 @@ type websocketMessage struct {
 	Data  string `json:"payload"`
 }
 
-type PeerConnectionState struct {
+type peerConnectionState struct {
 	peerConnection *webrtc.PeerConnection
 	websocket      *threadSafeWriter
 }
 
-func PolingRTCClientsLoop() {
+func main() {
+	// Parse the flags passed to program
+	flag.Parse()
+
 	// Init other state
+	log.SetFlags(0)
 	trackLocals = map[string]*webrtc.TrackLocalStaticRTP{}
+
+	// Read index.html from disk into memory, serve whenever anyone requests /
+	indexHTML, err := ioutil.ReadFile("./public/index.html")
+	if err != nil {
+		panic(err)
+	}
+	indexTemplate = template.Must(template.New("").Parse(string(indexHTML)))
+
+	// websocket handler
+	http.HandleFunc("/websocket", websocketHandler)
+
+	// index.html handler
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if err := indexTemplate.Execute(w, "ws://"+r.Host+"/websocket"); err != nil {
+			log.Fatal(err)
+		}
+	})
 
 	// request a keyframe every 3 seconds
 	go func() {
@@ -38,7 +69,8 @@ func PolingRTCClientsLoop() {
 			dispatchKeyFrame()
 		}
 	}()
-
+	// start HTTP server
+	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
 // Add to list of tracks and fire renegotation for all PeerConnections
@@ -183,17 +215,28 @@ func dispatchKeyFrame() {
 }
 
 // Handle incoming websockets
-func CreatePeerCon(conn *websocket.Conn) (*webrtc.PeerConnection, error) {
+func websocketHandler(w http.ResponseWriter, r *http.Request) {
+	// Upgrade HTTP request to Websocket
+	unsafeConn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Print("upgrade:", err)
+		return
+	}
 
-	c := &threadSafeWriter{conn, sync.Mutex{}}
+	c := &threadSafeWriter{unsafeConn, sync.Mutex{}}
+
+	// When this frame returns close the Websocket
+	defer c.Close() //nolint
 
 	// Create new PeerConnection
 	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{})
-
 	if err != nil {
 		log.Print(err)
-		return nil, err
+		return
 	}
+
+	// When this frame returns close the PeerConnection
+	defer peerConnection.Close() //nolint
 
 	// Accept one audio and one video track incoming
 	for _, typ := range []webrtc.RTPCodecType{webrtc.RTPCodecTypeVideo, webrtc.RTPCodecTypeAudio} {
@@ -201,13 +244,13 @@ func CreatePeerCon(conn *websocket.Conn) (*webrtc.PeerConnection, error) {
 			Direction: webrtc.RTPTransceiverDirectionRecvonly,
 		}); err != nil {
 			log.Print(err)
-			return nil, err
+			return
 		}
 	}
 
 	// Add our new PeerConnection to global list
 	listLock.Lock()
-	peerConnections = append(peerConnections, PeerConnectionState{peerConnection, c})
+	peerConnections = append(peerConnections, peerConnectionState{peerConnection, c})
 	listLock.Unlock()
 
 	// Trickle ICE. Emit server candidate to client
@@ -263,69 +306,42 @@ func CreatePeerCon(conn *websocket.Conn) (*webrtc.PeerConnection, error) {
 	// Signal for the new PeerConnection
 	signalPeerConnections()
 
-	//message := &websocketMessage{}
-	//for {
-	//	_, raw, err := c.ReadMessage()
-	//	if err != nil {
-	//		log.Println(err)
-	//		return
-	//	} else if err := json.Unmarshal(raw, &message); err != nil {
-	//		log.Println(err)
-	//		return
-	//	}
-	//
-	//	switch message.Event {
-	//	case "candidate":
-	//		candidate := webrtc.ICECandidateInit{}
-	//		if err := json.Unmarshal([]byte(message.Data), &candidate); err != nil {
-	//			log.Println(err)
-	//			return
-	//		}
-	//
-	//		if err := peerConnection.AddICECandidate(candidate); err != nil {
-	//			log.Println(err)
-	//			return
-	//		}
-	//	case "answer":
-	//		answer := webrtc.SessionDescription{}
-	//		if err := json.Unmarshal([]byte(message.Data), &answer); err != nil {
-	//			log.Println(err)
-	//			return
-	//		}
-	//
-	//		if err := peerConnection.SetRemoteDescription(answer); err != nil {
-	//			log.Println(err)
-	//			return
-	//		}
-	//	}
-	//}
+	message := &websocketMessage{}
+	for {
+		_, raw, err := c.ReadMessage()
 
-	return peerConnection, nil
-}
+		if err != nil {
+			log.Println(1, err)
+			return
+		} else if err := json.Unmarshal(raw, &message); err != nil {
+			log.Println(2, err)
+			return
+		}
 
-func OnCandidate(pc *webrtc.PeerConnection, message string) {
-	candidate := webrtc.ICECandidateInit{}
-	if err := json.Unmarshal([]byte(message), &candidate); err != nil {
-		log.Println(err)
-		return
-	}
+		switch message.Event {
+		case "candidate":
+			candidate := webrtc.ICECandidateInit{}
+			if err := json.Unmarshal([]byte(message.Data), &candidate); err != nil {
+				log.Println(3, err)
+				return
+			}
 
-	if err := pc.AddICECandidate(candidate); err != nil {
-		log.Println(err)
-		return
-	}
-}
+			if err := peerConnection.AddICECandidate(candidate); err != nil {
+				log.Println(4, err)
+				return
+			}
+		case "answer":
+			answer := webrtc.SessionDescription{}
+			if err := json.Unmarshal([]byte(message.Data), &answer); err != nil {
+				log.Println(err)
+				return
+			}
 
-func OnAnswer(pc *webrtc.PeerConnection, message string) {
-	answer := webrtc.SessionDescription{}
-	if err := json.Unmarshal([]byte(message), &answer); err != nil {
-		log.Println("RTC answer Unmarshal Error: ", err)
-		return
-	}
-
-	if err := pc.SetRemoteDescription(answer); err != nil {
-		log.Println("RTC answer Failed to set remote description Error: ", err)
-		return
+			if err := peerConnection.SetRemoteDescription(answer); err != nil {
+				log.Println(err)
+				return
+			}
+		}
 	}
 }
 

@@ -24,9 +24,9 @@ func (h *Handler) InitRouter(socketFactory *SocketHandlers.SocketClientFactory) 
 
 	router.StaticFS("/file", http.Dir("public"))
 
-	//router.NoRoute(func(c *gin.Context) {
-	//   c.File("./public/index.html")
-	//})
+	router.NoRoute(func(c *gin.Context) {
+		c.File("./public/index.html")
+	})
 
 	router.POST("/upload", h.handleUploadFile)
 

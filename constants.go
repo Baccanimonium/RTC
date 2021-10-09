@@ -6,4 +6,6 @@ const (
 	BroadcastCreateChatMessage = "onNewChatMessage"
 	BroadcastCreateChannel     = "onNewChannel"
 	BroadcastDeleteChannel     = "onDeleteChannel"
+	RTCCandidate               = "candidate"
+	RTCAnswer                  = "answer"
 )

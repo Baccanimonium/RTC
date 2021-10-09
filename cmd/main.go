@@ -15,6 +15,7 @@ import (
 	"time"
 	"video-chat-app"
 	"video-chat-app/src/Handlers"
+	RTC2 "video-chat-app/src/RTC"
 	"video-chat-app/src/Repos"
 	"video-chat-app/src/Services"
 	"video-chat-app/src/SocketHandlers"
@@ -82,7 +83,7 @@ func main() {
 	handlers := Handlers.NewHandler(services)
 
 	// запускаем цикл отправки видео между RTC клиенами
-	//SocketController.PolingRTCClientsLoop()
+	RTC2.PolingRTCClientsLoop()
 
 	//запускаем горутину с прослушиванием каналов сокет хаба
 	go socketHub.Run()
