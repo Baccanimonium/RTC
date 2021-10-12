@@ -6,13 +6,13 @@ import (
 )
 
 type Consultation struct {
-	Id        int    `json:"id" db:"id"`
-	IdPatient int    `json:"id_patient"`
-	IdUsers   int    `json:"id_users"`
-	IdCourse  int    `json:"id_course"`
-	Title     string `json:"title"`
-	TimeStart string `json:"time_start"`
-	TimeEnd   string `json:"time_end"`
+	Id         int    `json:"id"`
+	IdPatient  int    `json:"id_patient" binding:"required"`
+	IdUsers    int    `json:"id_user" binding:"required"`
+	IdSchedule int    `json:"id_schedule" binding:"required"`
+	Title      string `json:"title" binding:"required"`
+	TimeStart  string `json:"time_start" binding:"required"`
+	TimeEnd    string `json:"time_end" binding:"required"`
 }
 
 func NewConsultationPostgresRepo(db *sqlx.DB) *Postgres {
@@ -23,10 +23,19 @@ func (r *Postgres) CreateConsultation(idSchedule int, consultation Consultation)
 	var result Consultation
 
 	query := fmt.Sprintf(
-		"INSERT INTO %s (id_user, id_patient, id_course, title, time_start, time_end) values ($1, $2, $3, $4, $5, $6) RETURNING *",
+		`INSERT INTO %s (id_user, id_patient, id_course, title, time_start, time_end)
+				values ($1, $2, $3, $4, $5, $6) RETURNING *`,
 		consultationTable,
 	)
-	row := r.db.QueryRow(query, consultation.IdPatient, consultation.IdUsers, consultation.IdCourse, consultation.Title, consultation.TimeStart, consultation.TimeEnd)
+	row := r.db.QueryRow(
+		query,
+		consultation.IdPatient,
+		consultation.IdUsers,
+		consultation.IdSchedule,
+		consultation.Title,
+		consultation.TimeStart,
+		consultation.TimeEnd,
+	)
 
 	if err := row.Scan(&result); err != nil {
 		return Consultation{}, err
@@ -50,7 +59,7 @@ func (r *Postgres) GetAllConsultation(idSchedule int) ([]Consultation, error) {
 func (r *Postgres) GetConsultationById(idSchedule, idConsultation int) (Consultation, error) {
 	var consultation Consultation
 
-	query := fmt.Sprintf(`SELECT id, id_patient, id_users, id_course, title, time_start, time_end FROM %s WHERE id = $1`,
+	query := fmt.Sprintf(`SELECT id, id_patient, id_user, id_course, title, time_start, time_end FROM %s WHERE id = $1`,
 		consultationTable,
 	)
 
@@ -72,7 +81,7 @@ func (r *Postgres) UpdateConsultation(consultation Consultation, id int) (Consul
 func (r *Postgres) getAllConsultation() ([]Consultation, error) {
 	var consultations []Consultation
 
-	query := fmt.Sprintf(`SELECT id, id_patient, id_users, id_course, title, time_start, time_end FROM %s WHERE id = $1`,
+	query := fmt.Sprintf(`SELECT id, id_patient, id_user, id_course, title, time_start, time_end FROM %s WHERE id = $1`,
 		consultationTable,
 	)
 

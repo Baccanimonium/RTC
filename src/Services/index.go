@@ -45,7 +45,7 @@ type ScheduleService interface {
 	CreateSchedule(schedule Repos.Schedule) (Repos.Schedule, error)
 	UpdateSchedule(schedule Repos.Schedule, id int) (Repos.Schedule, error)
 	GetScheduleById(id int) (Repos.Schedule, error)
-	GetAllSchedule() ([]Repos.Schedule, error)
+	GetAllSchedule(idPatient int) ([]Repos.Schedule, error)
 	DeleteSchedule(id int) error
 }
 
@@ -88,7 +88,7 @@ func NewService(repo *Repos.Repo, broadcast chan RTC.BroadcastingMessage) *Servi
 		Authorization:       NewAuthService(repo.Authorization),
 		DoctorService:       NewDoctorService(repo.DoctorRepo),
 		PatientService:      NewPatientService(repo.PatientRepo),
-		ScheduleService:     NewScheduleService(repo.ScheduleRepo),
+		ScheduleService:     NewScheduleService(repo.ScheduleRepo, broadcast),
 		ConsultationService: NewConsultationService(repo.ConsultationRepo),
 		EventService:        NewEventService(repo.EventRepo),
 		UserService:         NewUserService(repo.UserRepo),

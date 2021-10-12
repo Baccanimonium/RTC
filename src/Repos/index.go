@@ -47,8 +47,8 @@ type ScheduleRepo interface {
 	CreateSchedule(schedule Schedule) (Schedule, error)
 	UpdateSchedule(schedule Schedule, id int) (Schedule, error)
 	GetScheduleById(id int) (Schedule, error)
-	GetAllSchedule() ([]Schedule, error)
-	DeleteSchedule(id int) error
+	GetAllSchedule(idPatient int) ([]Schedule, error)
+	DeleteSchedule(id int) (Schedule, error)
 }
 
 type ConsultationRepo interface {

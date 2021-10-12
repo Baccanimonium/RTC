@@ -1,6 +1,6 @@
 CREATE TABLE users
 (
-    id       serial       not null unique,
+    id       serial not null unique,
     name     varchar(40),
     surname  varchar(40),
     avatar   varchar(40),
@@ -15,7 +15,7 @@ CREATE TABLE users
 
 CREATE TABLE doctor
 (
-    id             serial                                      not null unique,
+    id             serial not null unique,
     id_user        int references users (id) on delete cascade not null unique,
     salary         float8,
     qualifications varchar(255),
@@ -24,58 +24,56 @@ CREATE TABLE doctor
 
 CREATE TABLE patient
 (
-    id                serial                                      not null unique,
+    id                serial not null unique,
     id_user           int references users (id) on delete cascade not null unique,
-    id_current_doctor int                                         references users (id) on delete set null,
+    id_current_doctor int references users (id) on delete set null,
     description       varchar(500),
-    recovered         boolean                                     not null default false
+    recovered         boolean not null default false
 );
 
-CREATE TABLE course
+CREATE TABLE schedule
 (
-    id          serial                                        not null unique,
+    id          serial not null unique,
     id_patient  int references patient (id) on delete cascade not null,
-    id_users    int                                           references users (id) on delete set null,
+    id_user     int references users (id) on delete cascade   not null,
     title       varchar(100),
     description varchar(500),
     time_start  varchar(10),
     time_end    varchar(10)
 );
 
-CREATE TABLE schedule
-(
-    id          serial                                      not null unique,
-    id_user     int references users (id) on delete cascade not null,
-    title       varchar(100),
-    description varchar(500)
-);
-
 CREATE TABLE consultation
 (
-    id         serial                                      not null unique,
-    id_patient int                                         references patient (id) on delete set null,
-    id_users   int references users (id) on delete cascade not null,
-    id_course  int                                         references course (id) on delete set null,
-    title      varchar(100),
-    time_start varchar(16),
-    time_end   varchar(16)
+    id          serial not null unique,
+    id_patient  int references patient (id) on delete set null,
+    id_user     int references users (id) on delete cascade not null,
+    id_schedule int references schedule (id) on delete set null,
+    title       varchar(100),
+    time_start  varchar(16),
+    time_end    varchar(16)
 );
 
 CREATE TABLE event
 (
-    id          serial                                       not null unique,
+    id          serial not null unique,
     time_start  varchar(16),
     time_end    varchar(16),
     title       varchar(100),
-    id_course   int references course (id) on delete cascade not null,
+    id_schedule int references schedule (id) on delete cascade not null,
     type        varchar(100),
     description varchar(500),
-    accepted    boolean                                      not null default false
+    accepted    boolean not null default false
 );
 
-CREATE TABLE schedule_event
+CREATE TABLE roles
 (
-    id          serial                                         not null unique,
-    id_schedule int references schedule (id) on delete cascade not null,
-    id_event    int references event (id) on delete cascade    not null
+    id          serial not null unique,
+    title       varchar(25) not null unique,
+)
+
+CREATE TABLE user_role
+(
+    id          serial not null unique,
+    id_user     int references users (id) on delete cascade not null,
+    id_event    int references roles (id) on delete cascade not null
 );

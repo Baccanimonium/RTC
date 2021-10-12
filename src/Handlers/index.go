@@ -90,6 +90,14 @@ func (h *Handler) InitRouter(socketFactory *SocketHandlers.SocketClientFactory) 
 				event.PUT("/:event_id", h.UpdateEvent)
 				event.DELETE("/:event_id", h.DeleteEvent)
 			}
+			consultation := schedule.Group(":id/consultation")
+			{
+				consultation.POST("/", h.createConsultation)
+				consultation.GET("/", h.listConsultation)
+				consultation.GET("/:ct_id", h.getConsultation)
+				consultation.PUT("/:ct_id", h.updateConsultation)
+				consultation.DELETE("/:ct_id", h.deleteConsultation)
+			}
 		}
 	}
 

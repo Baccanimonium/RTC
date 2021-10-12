@@ -44,6 +44,13 @@ func NewHub(repo *Repos.Repo, broadcast chan RTC.BroadcastingMessage) *Hub {
 }
 
 func (h *Hub) Run() {
+
+	handlers := map[string]func(message RTC.BroadcastingMessage){
+		RTC.BroadcastCreateSchedule: h.SendScheduleEvent,
+		RTC.BroadcastUpdateSchedule: h.SendScheduleEvent,
+		RTC.BroadcastDeleteSchedule: h.SendScheduleEvent,
+	}
+
 	for {
 		select {
 		case client := <-h.register:
@@ -79,6 +86,8 @@ func (h *Hub) Run() {
 					}
 				}
 			}
+
+			handlers[message.MessageType](message)
 			//rawJson, _ := json.Marshal(message)
 			//if message["channelId"] != nil {
 			//	channel, err := h.repo.ChannelsRepo.GetChannelByID(message["channelId"])

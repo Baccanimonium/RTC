@@ -26,7 +26,13 @@ func (h Handler) createSchedule(c *gin.Context) {
 }
 
 func (h Handler) listSchedule(c *gin.Context) {
-	scheduleList, err := h.services.ScheduleService.GetAllSchedule()
+
+	idPatient, err := strconv.Atoi(c.Param("idPatient"))
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid idPatient param")
+		return
+	}
+	scheduleList, err := h.services.ScheduleService.GetAllSchedule(idPatient)
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
