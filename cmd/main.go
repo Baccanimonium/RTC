@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
@@ -19,6 +20,7 @@ import (
 	"video-chat-app/src/Repos"
 	"video-chat-app/src/Services"
 	"video-chat-app/src/SocketHandlers"
+	"video-chat-app/src/Tasks"
 )
 
 func main() {
@@ -62,6 +64,18 @@ func main() {
 		logrus.Errorf("error occured on mongodb connection close: %s", err.Error())
 	}
 
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     viper.GetString("redis.addr"),
+		Password: viper.GetString("redis.password"), // no password set
+		DB:       0,                                 // use default DB
+	})
+
+	_, err = rdb.Ping().Result()
+
+	if err != nil {
+		logrus.Fatalf("failed to initialize redis: %s", err.Error())
+	}
+
 	db, err := RTC.NewPostgresDB(RTC.Config{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetString("db.port"),
@@ -87,6 +101,10 @@ func main() {
 
 	//запускаем горутину с прослушиванием каналов сокет хаба
 	go socketHub.Run()
+
+	backgroundTasks := Tasks.NewTaskManager(services, socketHub, rdb)
+
+	backgroundTasks.Run()
 
 	srv := new(RTC.Server)
 

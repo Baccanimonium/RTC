@@ -99,3 +99,12 @@ func (h *Hub) Run() {
 		}
 	}
 }
+
+func (h *Hub) SendMessageToClient(message RTC.BroadcastingMessage, idClient int) {
+	if h.clients[idClient] != nil {
+		rawMessage, err := json.Marshal(message)
+		if err == nil {
+			h.clients[idClient].send <- rawMessage
+		}
+	}
+}

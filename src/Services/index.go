@@ -54,6 +54,7 @@ type EventService interface {
 	UpdateEvent(event Repos.Event, id int) (Repos.Event, error)
 	GetEventById(id int) (Repos.Event, error)
 	GetAllEvents(idSchedule int) ([]Repos.Event, error)
+	GetEventsByDate(date string) ([]Repos.Event, error)
 	DeleteEvent(id int) error
 }
 

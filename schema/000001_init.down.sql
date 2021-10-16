@@ -1,4 +1,6 @@
-DROP TABLE schedule_event;
+DROP TABLE user_role;
+DROP TABLE roles;
+DROP TABLE tasks;
 DROP TABLE schedule;
 DROP TABLE consultation;
 DROP TABLE event;

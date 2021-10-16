@@ -35,16 +35,18 @@ services:
       - POSTGRES_PASSWORD=docker
       - PGDATA=/pgdata
       - POSTGRES_DB=test_db
-
-  migrate:
-    image: migrate/migrate
+  redis:
+    image: "bitnami/redis:5.0.14"
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./.database/redis/data:/var/lib/redis/data
     networks:
       - api-server-network
-    volumes:
-      - .:/schema
-    command: [ "-path", "/migrations", "-database",  "postgres://docker:docker@database:5432/test_db?sslmode=disable", "up" ]
-    links:
-      - postgres
+    container_name: redis
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=dockerRedis
   mongodb:
     image: mongo
     networks:
@@ -59,7 +61,15 @@ services:
     ports:
       - "27017:27017"
     restart: unless-stopped
-
+  migrate:
+    image: migrate/migrate
+    networks:
+      - api-server-network
+    volumes:
+      - .:/schema
+    command: [ "-path", "/migrations", "-database",  "postgres://docker:docker@database:5432/test_db?sslmode=disable", "up" ]
+    links:
+      - postgres
 networks:
   api-server-network:
     driver: bridge

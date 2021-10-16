@@ -64,6 +64,7 @@ type EventRepo interface {
 	UpdateEvent(event Event, id int) (Event, error)
 	GetEventById(id int) (Event, error)
 	GetAllEvents(idSchedule int) ([]Event, error)
+	GetEventsByDate(date string) ([]Event, error)
 	DeleteEvent(id int) error
 }
 

@@ -6,13 +6,14 @@ import (
 )
 
 type Event struct {
-	Id          int    `json:"id" db:"id"`
-	IdPatient   string `json:"id_patient" db:"id_patient" binding:"required"`
-	IdUser      int    `json:"id_users" db:"id_user" binding:"required"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	TimeStart   string `json:"time_start"`
-	TimeEnd     string `json:"time_end"`
+	Id                   int    `json:"id" db:"id"`
+	IdPatient            string `json:"id_patient" db:"id_patient" binding:"required"`
+	IdUser               int    `json:"id_users" db:"id_user" binding:"required"`
+	Title                string `json:"title"`
+	RequiresConfirmation bool   `json:"requires_confirmation"`
+	Description          string `json:"description"`
+	TimeStart            string `json:"time_start"`
+	TimeEnd              string `json:"time_end"`
 }
 
 func NewEventPostgresRepo(db *sqlx.DB) *Postgres {
@@ -95,6 +96,20 @@ func (r *Postgres) GetAllEvents(idSchedule int) ([]Event, error) {
 	)
 
 	err := r.db.Select(&schedules, query, idSchedule)
+
+	return schedules, err
+}
+func (r *Postgres) GetEventsByDate(date string) ([]Event, error) {
+	var schedules = make([]Event, 0)
+
+	query := fmt.Sprintf(
+		`SELECT
+				id, id_patient, id_users, title, description, time_start, time_end
+				FROM %s WHERE time_start = $1`,
+		eventTable,
+	)
+
+	err := r.db.Select(&schedules, query, date)
 
 	return schedules, err
 }

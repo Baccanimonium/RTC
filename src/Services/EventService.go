@@ -26,6 +26,10 @@ func (s *EventRepo) GetAllEvents(idSchedule int) ([]Repos.Event, error) {
 	return s.repo.GetAllEvents(idSchedule)
 }
 
+func (s *EventRepo) GetEventsByDate(date string) ([]Repos.Event, error) {
+	return s.repo.GetEventsByDate(date)
+}
+
 func (s *EventRepo) DeleteEvent(id int) error {
 	return s.repo.DeleteEvent(id)
 }

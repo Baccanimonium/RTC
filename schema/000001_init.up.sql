@@ -77,3 +77,12 @@ CREATE TABLE user_role
     id_user     int references users (id) on delete cascade not null,
     id_event    int references roles (id) on delete cascade not null
 );
+
+CREATE TABLE tasks
+(
+    id         serial not null unique,
+    id_patient int references patient (id) on delete cascade not null,
+    id_user    int references users (id) on delete cascade not null,
+    id_event   int references event (id) on delete cascade not null,
+    weight     int default 0,
+);

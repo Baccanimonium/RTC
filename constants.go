@@ -11,6 +11,7 @@ const (
 	BroadcastCreateSchedule    = "onNewSchedule"
 	BroadcastUpdateSchedule    = "onUpdateSchedule"
 	BroadcastDeleteSchedule    = "onDeleteSchedule"
+	BroadcastUpComingEvent     = "upComingEvent"
 	RTCCandidate               = "candidate"
 	RTCAnswer                  = "answer"
 )
