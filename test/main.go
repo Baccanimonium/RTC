@@ -1,12 +1,20 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
+	"github.com/go-redis/redis/v8"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
 	"sync"
+	"syscall"
 	"text/template"
 	"time"
 
@@ -39,6 +47,9 @@ type peerConnectionState struct {
 }
 
 func main() {
+	viper.AddConfigPath("configs")
+	viper.SetConfigName("server")
+	viper.ReadInConfig()
 	// Parse the flags passed to program
 	flag.Parse()
 
@@ -69,8 +80,118 @@ func main() {
 			dispatchKeyFrame()
 		}
 	}()
+
+	type Model struct {
+		Id          int      `json:"id" redis:"id"`
+		IdPatient   int      `json:"id_patient" binding:"required" redis:"id_patient"`
+		IdDoctor    int      `json:"id_doctor" binding:"required" redis:"id_doctor"`
+		Title       string   `json:"title" redis:"title"`
+		Description string   `json:"description" redis:"description"`
+		Asd         []string `json:"asd" redis:"asd"`
+	}
+	//opt, err := redis.ParseURL(fmt.Sprintf(
+	//	"redis://:%s@%s:%s/0",
+	//	viper.GetString("redis.password"),
+	//	viper.GetString("redis.addr"),
+	//	viper.GetString("redis.port"),
+	//))
+	//
+	//if err != nil {
+	//	panic(err)
+	//}
+	ctx := context.Background()
+	logrus.Printf(viper.GetString("redis.address"), viper.GetString("redis.password"))
+	rdb := redis.NewClient(&redis.Options{
+
+		Addr:     viper.GetString("redis.address"),
+		Password: viper.GetString("redis.password"), // no password set
+		DB:       0,                                 // use default DB
+	})
+
+	_, err = rdb.Ping(ctx).Result()
+
+	if err != nil {
+		logrus.Fatalf("failed to initialize redis: %s", err.Error())
+	}
+
+	firstEvent := Model{
+		IdDoctor:    1,
+		IdPatient:   1,
+		Id:          123123,
+		Title:       "FIRST EVENT",
+		Description: "FIRST EVENT DESCRIPTION",
+		Asd:         []string{"123", "124", "125"},
+	}
+
+	firstKey := strconv.Itoa(firstEvent.Id)
+
+	secondEvent := Model{
+		IdDoctor:    2,
+		IdPatient:   2,
+		Id:          4444,
+		Title:       "SECOND EVENT",
+		Description: "SECOND EVENT DESCRIPTION",
+		Asd:         []string{"123", "124", "125"},
+	}
+	secondKey := strconv.Itoa(secondEvent.Id)
+
+	if _, err := rdb.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+		rdb.HSet(ctx, firstKey, "id_patient", firstEvent.IdPatient)
+		rdb.HSet(ctx, firstKey, "id_doctor", firstEvent.IdDoctor)
+		rdb.HSet(ctx, firstKey, "title", firstEvent.Title)
+		rdb.HSet(ctx, firstKey, "description", firstEvent.Description)
+		rdb.SAdd(ctx, "A", firstEvent.Asd)
+		return nil
+	}); err != nil {
+		panic(err)
+	}
+	if _, err := rdb.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+		rdb.HSet(ctx, secondKey, "id_patient", secondEvent.IdPatient)
+		rdb.HSet(ctx, secondKey, "id_doctor", secondEvent.IdDoctor)
+		rdb.HSet(ctx, secondKey, "title", secondEvent.Title)
+		rdb.HSet(ctx, secondKey, "description", secondEvent.Description)
+
+		return nil
+	}); err != nil {
+		panic(err)
+	}
+
+	//var model1 Model
+
+	if err != nil {
+		logrus.Printf("ERROR ", err.Error())
+	}
+	res := rdb.SMIsMember(ctx, "A", "123", "124")
+	logrus.Print("KEYS ", rdb.SMembers(ctx, "A"), res)
+
+	var articleData Model
+
+	err = rdb.HGetAll(ctx, firstKey).Scan(&articleData)
+
+	logrus.Printf("%+v\n", articleData)
+
+	rdb.SAdd(ctx, "asd", 1)
+	rdb.SAdd(ctx, "asd", 12)
+	rdb.SAdd(ctx, "asd", 13)
+	rdb.SAdd(ctx, "asd", 14)
+	var taskCandidates []string
+	_ = rdb.SMembers(ctx, "asd").ScanSlice(&taskCandidates)
+
+	for index, value := range taskCandidates {
+		logrus.Print("INDEX ", index, " VALUE ", value)
+	}
+
 	// start HTTP server
-	log.Fatal(http.ListenAndServe(*addr, nil))
+	http.ListenAndServe(*addr, nil)
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
+
+	if err := rdb.Close(); err != nil {
+		logrus.Errorf("error occured on redis connection close: %s", err.Error())
+	}
+
 }
 
 // Add to list of tracks and fire renegotation for all PeerConnections
@@ -357,3 +478,25 @@ func (t *threadSafeWriter) WriteJSON(v interface{}) error {
 
 	return t.Conn.WriteJSON(v)
 }
+
+//import (
+//	"fmt"
+//	"time"
+//)
+//
+//
+//func main() {
+//	loc, err := time.LoadLocation("Africa/Accra")
+//	if err != nil {
+//		fmt.Println(err.Error())
+//	}
+//
+//	t, err := time.Parse("2006-01-02T15:04Z07:00", "1970-01-01T00:30+05:00")
+//
+//	if err != nil {
+//		fmt.Println(err.Error())
+//	}
+//	fmt.Println(t.Unix(), time.Date(1970, 1, 1,t.Hour(),t.Minute(),0,0, loc).Unix(),
+//		time.Now().Local().Add(time.Minute * time.Duration(7)).Format("15:04"),
+//	)
+//}

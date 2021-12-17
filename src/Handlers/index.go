@@ -75,6 +75,29 @@ func (h *Handler) InitRouter(socketFactory *SocketHandlers.SocketClientFactory) 
 			patient.PUT("/:id", h.UpdatePatient)
 			patient.DELETE("/:id", h.DeletePatient)
 		}
+
+		taskCandidates := api.Group("/task_candidates")
+		{
+			taskCandidates.GET("/", h.getTaskCandidatesByPatientId)
+			taskCandidates.DELETE("/:id", h.deleteTaskCandidate)
+		}
+
+		task := api.Group("/task")
+		{
+			task.GET("/", h.GetAllTasks)
+			task.POST("/", h.CreateTask)
+			task.DELETE("/:id", h.DeleteTask)
+		}
+
+		event := api.Group("/event")
+		{
+			event.POST("/", h.createEvent)
+			event.GET("/", h.listEvent)
+			event.GET("/:id", h.getEvent)
+			event.PUT("/:id", h.UpdateEvent)
+			event.DELETE("/:id", h.DeleteEvent)
+		}
+
 		schedule := api.Group("/schedule")
 		{
 			schedule.POST("/", h.createSchedule)
@@ -82,14 +105,7 @@ func (h *Handler) InitRouter(socketFactory *SocketHandlers.SocketClientFactory) 
 			schedule.GET("/:id", h.getSchedule)
 			schedule.PUT("/:id", h.UpdateSchedule)
 			schedule.DELETE("/:id", h.DeleteSchedule)
-			event := schedule.Group(":id/event")
-			{
-				event.POST("/", h.createEvent)
-				event.GET("/", h.listEvent)
-				event.GET("/:event_id", h.getEvent)
-				event.PUT("/:event_id", h.UpdateEvent)
-				event.DELETE("/:event_id", h.DeleteEvent)
-			}
+
 			consultation := schedule.Group(":id/consultation")
 			{
 				consultation.POST("/", h.createConsultation)

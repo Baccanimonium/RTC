@@ -34,28 +34,23 @@ type PatientService interface {
 }
 
 type ConsultationService interface {
-	CreateConsultation(idSchedule int, consultation Repos.Consultation) (Repos.Consultation, error)
+	CreateConsultation(consultation Repos.Consultation) (Repos.Consultation, error)
+	GetAllConsultation(idDoctor int, idPatient int) ([]Repos.Consultation, error)
+	GetConsultationById(idConsultation int) (Repos.Consultation, error)
 	UpdateConsultation(consultation Repos.Consultation, id int) (Repos.Consultation, error)
-	GetConsultationById(idSchedule, idConsultation int) (Repos.Consultation, error)
-	GetAllConsultation(idSchedule int) ([]Repos.Consultation, error)
-	DeleteConsultation(idSchedule, idConsultation int) error
-}
-
-type ScheduleService interface {
-	CreateSchedule(schedule Repos.Schedule) (Repos.Schedule, error)
-	UpdateSchedule(schedule Repos.Schedule, id int) (Repos.Schedule, error)
-	GetScheduleById(id int) (Repos.Schedule, error)
-	GetAllSchedule(idPatient int) ([]Repos.Schedule, error)
-	DeleteSchedule(id int) error
+	SetDoctorJoinTime(id int) error
+	DeleteConsultation(idConsultation int) error
+	CreateConsultationNotes(notes Repos.Notes) (Repos.Notes, error)
+	UpdateConsultationNotes(notes Repos.Notes) (Repos.Notes, error)
+	DeleteConsultationNotes(idNotes int) error
 }
 
 type EventService interface {
-	CreateEvent(idSchedule int, event Repos.Event) (int, error)
-	UpdateEvent(event Repos.Event, id int) (Repos.Event, error)
+	CreateEvent(event Repos.Event) (Repos.Event, error)
+	UpdateEvent(event Repos.Event) (Repos.Event, error)
 	GetEventById(id int) (Repos.Event, error)
-	GetAllEvents(idSchedule int) ([]Repos.Event, error)
-	GetEventsByDate(date string) ([]Repos.Event, error)
-	DeleteEvent(id int) error
+	GetAllEvents(request Repos.GetAllEventsParams) ([]Repos.Event, error)
+	DeleteEvent(id int) (Repos.Event, error)
 }
 
 type MessagesService interface {
@@ -72,28 +67,50 @@ type ChannelsService interface {
 	GetAllChannelsBelongsToUser(userId int) ([]Models.Channel, error)
 }
 
+type TaskCandidatesService interface {
+	CreateTaskCandidates(unConfirmedEvents []Repos.Event, currentDate, currentTime string) error
+	DeleteTaskCandidate(taskId int) error
+	ExtractTaskCandidates(taskTime string) ([]Repos.TaskCandidate, error)
+	GetTaskCandidatesByPatient(patientId int) ([]Repos.TaskCandidate, error)
+}
+
+type TaskService interface {
+	CreateTask(task Repos.TaskCandidate) (Repos.Task, error)
+	GetAllTasks(idDoctor int, idPatient int) ([]Repos.Task, error)
+	DeleteTask(idTask int) (Repos.Task, error)
+}
+
+type PatientCandidatesService interface {
+	CreatePatientCandidate(patientCandidate Models.PatientCandidate) (interface{}, error)
+	GetAllPatientCandidates() ([]Models.PatientCandidate, error)
+}
+
 type Services struct {
 	Authorization
 	DoctorService
 	PatientService
-	ScheduleService
 	ConsultationService
 	EventService
 	UserService
 	MessagesService
 	ChannelsService
+	TaskCandidatesService
+	TaskService
+	PatientCandidatesService
 }
 
 func NewService(repo *Repos.Repo, broadcast chan RTC.BroadcastingMessage) *Services {
 	return &Services{
-		Authorization:       NewAuthService(repo.Authorization),
-		DoctorService:       NewDoctorService(repo.DoctorRepo),
-		PatientService:      NewPatientService(repo.PatientRepo),
-		ScheduleService:     NewScheduleService(repo.ScheduleRepo, broadcast),
-		ConsultationService: NewConsultationService(repo.ConsultationRepo),
-		EventService:        NewEventService(repo.EventRepo),
-		UserService:         NewUserService(repo.UserRepo),
-		MessagesService:     NewMessagesService(repo.MessagesRepo, broadcast),
-		ChannelsService:     NewChannelsService(repo.ChannelsRepo, broadcast),
+		Authorization:            NewAuthService(repo.Authorization),
+		DoctorService:            NewDoctorService(repo.DoctorRepo),
+		PatientService:           NewPatientService(repo.PatientRepo),
+		ConsultationService:      NewConsultationService(repo.ConsultationRepo),
+		EventService:             NewEventService(repo.EventRepo),
+		UserService:              NewUserService(repo.UserRepo),
+		MessagesService:          NewMessagesService(repo.MessagesRepo, broadcast),
+		ChannelsService:          NewChannelsService(repo.ChannelsRepo, broadcast),
+		TaskCandidatesService:    NewTaskCandidatesService(repo.TaskCandidatesRepo),
+		TaskService:              NewTaskService(repo.TaskRepo),
+		PatientCandidatesService: NewPatientCandidatesService(repo.PatientCandidatesRepo),
 	}
 }

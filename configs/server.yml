@@ -8,5 +8,7 @@ db:
   sslmode:  "disable"
 
 redis:
-  addr: "localhost:6379"
+  address: "localhost:6379"
+  addr: "localhost"
+  port: "6379"
   password: "dockerRedis"

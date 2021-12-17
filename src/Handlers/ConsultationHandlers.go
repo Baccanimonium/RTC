@@ -8,18 +8,13 @@ import (
 )
 
 func (h Handler) getConsultation(c *gin.Context) {
-	idSchedule, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid idSchedule param")
-		return
-	}
 	idConsultation, err := strconv.Atoi(c.Param("ct_id"))
 	if err != nil {
 		newErrorResponse(c, http.StatusBadRequest, "invalid idConsultation param")
 		return
 	}
 
-	consultation, err := h.services.ConsultationService.GetConsultationById(idSchedule, idConsultation)
+	consultation, err := h.services.ConsultationService.GetConsultationById(idConsultation)
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -30,12 +25,6 @@ func (h Handler) getConsultation(c *gin.Context) {
 }
 
 func (h Handler) createConsultation(c *gin.Context) {
-	idSchedule, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid idSchedule param")
-		return
-	}
-
 	var input Repos.Consultation
 
 	if err := c.BindJSON(&input); err != nil {
@@ -43,7 +32,7 @@ func (h Handler) createConsultation(c *gin.Context) {
 		return
 	}
 
-	consultation, err := h.services.ConsultationService.CreateConsultation(idSchedule, input)
+	consultation, err := h.services.ConsultationService.CreateConsultation(input)
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -84,12 +73,19 @@ func (h Handler) updateConsultation(c *gin.Context) {
 }
 
 func (h Handler) listConsultation(c *gin.Context) {
-	idSchedule, err := strconv.Atoi(c.Param("id"))
+	idDoctor, err := strconv.Atoi(c.Query("id_doctor"))
+
 	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid idSchedule param")
+		newErrorResponse(c, http.StatusBadRequest, "invalid idDoctor param")
 		return
 	}
-	consultationList, err := h.services.ConsultationService.GetAllConsultation(idSchedule)
+	idPatient, err := strconv.Atoi(c.Query("id_patient"))
+
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid idDoctor param")
+		return
+	}
+	consultationList, err := h.services.ConsultationService.GetAllConsultation(idDoctor, idPatient)
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -100,18 +96,13 @@ func (h Handler) listConsultation(c *gin.Context) {
 }
 
 func (h Handler) deleteConsultation(c *gin.Context) {
-	idSchedule, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid idSchedule param")
-		return
-	}
 	idConsultation, err := strconv.Atoi(c.Param("ct_id"))
 	if err != nil {
 		newErrorResponse(c, http.StatusBadRequest, "invalid idConsultation param")
 		return
 	}
 
-	if err := h.services.ConsultationService.DeleteConsultation(idSchedule, idConsultation); err != nil {
+	if err := h.services.ConsultationService.DeleteConsultation(idConsultation); err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}

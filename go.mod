@@ -8,10 +8,12 @@ require (
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-co-op/gocron v1.9.0
 	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/go-redis/redis/v8 v8.11.4
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/joho/godotenv v1.3.0
+	github.com/juliangruber/go-intersect v1.1.0 // indirect
 	github.com/lib/pq v1.2.0
 	github.com/pion/mediadevices v0.2.0
 	github.com/pion/rtcp v1.2.6

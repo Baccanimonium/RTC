@@ -14,13 +14,13 @@ RUN go mod download
 
 COPY . .
 
-RUN go build ./cmd
+RUN go build -o helper-app ./cmd/main.go
 
 FROM scratch
 
 COPY --from=build /app /app
 
-ENTRYPOINT ["/cmd"]
+ENTRYPOINT ["./helper-app"]
 
 CMD ["--help"]
 

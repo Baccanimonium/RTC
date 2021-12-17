@@ -10,26 +10,22 @@ func NewEventService(repo Repos.EventRepo) *EventRepo {
 	return &EventRepo{repo: repo}
 }
 
-func (s *EventRepo) CreateEvent(idSchedule int, event Repos.Event) (int, error) {
-	return s.repo.CreateEvent(idSchedule, event)
+func (s *EventRepo) CreateEvent(event Repos.Event) (Repos.Event, error) {
+	return s.repo.CreateEvent(event)
 }
 
-func (s *EventRepo) UpdateEvent(event Repos.Event, id int) (Repos.Event, error) {
-	return s.repo.UpdateEvent(event, id)
+func (s *EventRepo) UpdateEvent(event Repos.Event) (Repos.Event, error) {
+	return s.repo.UpdateEvent(event)
 }
 
 func (s *EventRepo) GetEventById(id int) (Repos.Event, error) {
 	return s.repo.GetEventById(id)
 }
 
-func (s *EventRepo) GetAllEvents(idSchedule int) ([]Repos.Event, error) {
-	return s.repo.GetAllEvents(idSchedule)
+func (s *EventRepo) GetAllEvents(request Repos.GetAllEventsParams) ([]Repos.Event, error) {
+	return s.repo.GetAllEvents(request)
 }
 
-func (s *EventRepo) GetEventsByDate(date string) ([]Repos.Event, error) {
-	return s.repo.GetEventsByDate(date)
-}
-
-func (s *EventRepo) DeleteEvent(id int) error {
+func (s *EventRepo) DeleteEvent(id int) (Repos.Event, error) {
 	return s.repo.DeleteEvent(id)
 }

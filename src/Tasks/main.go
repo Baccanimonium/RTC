@@ -2,7 +2,7 @@ package Tasks
 
 import (
 	"github.com/go-co-op/gocron"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"time"
 	"video-chat-app/src/Services"
 	"video-chat-app/src/SocketHandlers"

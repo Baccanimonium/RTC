@@ -1,6 +1,7 @@
 package Repos
 
 import (
+	"github.com/go-redis/redis/v8"
 	"github.com/jmoiron/sqlx"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,6 +14,15 @@ type Postgres struct {
 
 type Mongo struct {
 	db *mongo.Database
+}
+
+type MongoPagination struct {
+	Limit *int64
+	Skip  *int64
+}
+
+type Redis struct {
+	rdb *redis.Client
 }
 
 type Authorization interface {
@@ -43,29 +53,24 @@ type PatientRepo interface {
 	DeletePatient(id int) error
 }
 
-type ScheduleRepo interface {
-	CreateSchedule(schedule Schedule) (Schedule, error)
-	UpdateSchedule(schedule Schedule, id int) (Schedule, error)
-	GetScheduleById(id int) (Schedule, error)
-	GetAllSchedule(idPatient int) ([]Schedule, error)
-	DeleteSchedule(id int) (Schedule, error)
-}
-
 type ConsultationRepo interface {
-	CreateConsultation(idSchedule int, consultation Consultation) (Consultation, error)
+	CreateConsultation(consultation Consultation) (Consultation, error)
+	GetAllConsultation(idDoctor int, idPatient int) ([]Consultation, error)
+	GetConsultationById(idConsultation int) (Consultation, error)
 	UpdateConsultation(consultation Consultation, id int) (Consultation, error)
-	GetConsultationById(idSchedule, idConsultation int) (Consultation, error)
-	GetAllConsultation(idSchedule int) ([]Consultation, error)
-	DeleteConsultation(idSchedule, idConsultation int) error
+	SetDoctorJoinTime(id int) error
+	DeleteConsultation(idConsultation int) error
+	CreateConsultationNotes(notes Notes) (Notes, error)
+	UpdateConsultationNotes(notes Notes) (Notes, error)
+	DeleteConsultationNotes(idNotes int) error
 }
 
 type EventRepo interface {
-	CreateEvent(idSchedule int, event Event) (int, error)
-	UpdateEvent(event Event, id int) (Event, error)
+	CreateEvent(event Event) (Event, error)
+	UpdateEvent(event Event) (Event, error)
 	GetEventById(id int) (Event, error)
-	GetAllEvents(idSchedule int) ([]Event, error)
-	GetEventsByDate(date string) ([]Event, error)
-	DeleteEvent(id int) error
+	GetAllEvents(request GetAllEventsParams) ([]Event, error)
+	DeleteEvent(id int) (Event, error)
 }
 
 type MessagesRepo interface {
@@ -84,28 +89,50 @@ type ChannelsRepo interface {
 	GetAllChannelsBelongsToUser(creatorId int) ([]Models.Channel, error)
 }
 
+type TaskCandidatesRepo interface {
+	CreateTaskCandidates(unConfirmedEvents []Event, currentDate, currentTime string) error
+	DeleteTaskCandidate(candidateId int) error
+	ExtractTaskCandidates(taskTime string) ([]TaskCandidate, error)
+	GetTaskCandidatesByPatient(patientId int) ([]TaskCandidate, error)
+}
+
+type TaskRepo interface {
+	CreateTask(task TaskCandidate) (Task, error)
+	GetAllTasks(idDoctor int, idPatient int) ([]Task, error)
+	DeleteTask(idTask int) (Task, error)
+}
+
+type PatientCandidatesRepo interface {
+	CreatePatientCandidate(patientCandidate Models.PatientCandidate) (interface{}, error)
+	GetAllPatientCandidates() ([]Models.PatientCandidate, error)
+}
+
 type Repo struct {
 	Authorization
 	DoctorRepo
 	PatientRepo
-	ScheduleRepo
 	ConsultationRepo
 	EventRepo
 	UserRepo
 	MessagesRepo
 	ChannelsRepo
+	TaskCandidatesRepo
+	TaskRepo
+	PatientCandidatesRepo
 }
 
-func NewRepo(db *sqlx.DB, mongoDB *mongo.Database) *Repo {
+func NewRepo(db *sqlx.DB, mongoDB *mongo.Database, rdb *redis.Client) *Repo {
 	return &Repo{
-		Authorization:    NewAuthPostgresRepo(db),
-		DoctorRepo:       NewDoctorPostgresRepo(db),
-		PatientRepo:      NewPatientPostgresRepo(db),
-		ScheduleRepo:     NewSchedulePostgresRepo(db),
-		ConsultationRepo: NewConsultationPostgresRepo(db),
-		EventRepo:        NewEventPostgresRepo(db),
-		UserRepo:         NewUserPostgresRepo(db),
-		MessagesRepo:     NewMongoMessagesRepo(mongoDB),
-		ChannelsRepo:     NewMongoChannelsRepo(mongoDB),
+		Authorization:         NewAuthPostgresRepo(db),
+		DoctorRepo:            NewDoctorPostgresRepo(db),
+		PatientRepo:           NewPatientPostgresRepo(db),
+		ConsultationRepo:      NewConsultationPostgresRepo(db),
+		EventRepo:             NewEventPostgresRepo(db),
+		UserRepo:              NewUserPostgresRepo(db),
+		MessagesRepo:          NewMongoMessagesRepo(mongoDB),
+		ChannelsRepo:          NewMongoChannelsRepo(mongoDB),
+		TaskCandidatesRepo:    NewTaskCandidatesRedisRepo(rdb),
+		TaskRepo:              NewTaskPostgresRepo(db),
+		PatientCandidatesRepo: NewPatientCandidatesRepo(mongoDB),
 	}
 }

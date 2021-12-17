@@ -4,6 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"time"
 	RTC "video-chat-app"
+	"video-chat-app/src/Repos"
 )
 
 func (tm *TaskManager) RunEventTask() error {
@@ -12,10 +13,15 @@ func (tm *TaskManager) RunEventTask() error {
 }
 
 func (tm *TaskManager) eventTask() {
-	events, error := tm.services.EventService.GetEventsByDate(time.Now().Format("02.01.2006 15:04"))
-	if error != nil {
-		logrus.Print("Failed event task ", error.Error())
+	currentDate := time.Now()
+	currentTime := currentDate.Format("15:04")
+	currentDateString := currentDate.Format("02.01.2006")
+	events, err := tm.services.EventService.GetAllEvents(Repos.GetAllEventsParams{Date: currentDate})
+	if err != nil {
+		logrus.Print("Failed event task ", err.Error())
 	}
+
+	unConfirmedEvents := make([]Repos.Event, 0)
 
 	for _, event := range events {
 		rawEvent, convertError := RTC.ConvertToJson(event)
@@ -24,7 +30,21 @@ func (tm *TaskManager) eventTask() {
 				MessageType: RTC.BroadcastUpComingEvent,
 				Payload:     rawEvent,
 			}
-			tm.hub.SendMessageToClient(broadcastingMessage, event.IdUser)
+			tm.hub.SendMessageToClient(broadcastingMessage, event.IdPatient)
+			if event.NotifyDoctor {
+				tm.hub.SendMessageToClient(broadcastingMessage, event.IdDoctor)
+			}
+		}
+		if event.RequiresConfirmation {
+			unConfirmedEvents = append(unConfirmedEvents, event)
+		}
+	}
+
+	if len(unConfirmedEvents) > 0 {
+		err := tm.services.TaskCandidatesService.CreateTaskCandidates(unConfirmedEvents, currentDateString, currentTime)
+
+		if err != nil {
+			logrus.Print("Failed To create TASK CANDIDATES LIST AT ", currentTime, " ERROR ", err.Error())
 		}
 	}
 }

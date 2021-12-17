@@ -8,7 +8,7 @@ import (
 type Schedule struct {
 	Id          int    `json:"id" db:"id"`
 	IdPatient   int    `json:"id_patient" binding:"required"`
-	IdUser      int    `json:"id_user" binding:"required"`
+	IdDoctor    int    `json:"id_doctor" binding:"required"`
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
 	TimeStart   string `json:"time_start" binding:"required"`
@@ -23,13 +23,13 @@ func (r *Postgres) CreateSchedule(schedule Schedule) (Schedule, error) {
 	var result Schedule
 
 	query := fmt.Sprintf(
-		`INSERT INTO %s (id_user, id_patient, title, description, time_start, time_end)
+		`INSERT INTO %s (id_doctor, id_patient, title, description, time_start, time_end)
 				values ($1, $2, $3, $4, $5, $6) RETURNING *`,
 		scheduleTable,
 	)
 	row := r.db.QueryRow(
 		query,
-		schedule.IdUser,
+		schedule.IdDoctor,
 		schedule.IdPatient,
 		schedule.Title,
 		schedule.Description,
@@ -60,7 +60,7 @@ func (r *Postgres) GetScheduleById(id int) (Schedule, error) {
 	var schedule Schedule
 
 	query := fmt.Sprintf(
-		`SELECT id, id_patient, id_user, title, description, time_start, time_end
+		`SELECT id, id_patient, id_doctor, title, description, time_start, time_end
 				FROM %s WHERE id = $1`,
 		scheduleTable,
 	)
@@ -74,7 +74,7 @@ func (r *Postgres) GetAllSchedule(idPatient int) ([]Schedule, error) {
 	var schedules = make([]Schedule, 0)
 
 	query := fmt.Sprintf(
-		`SELECT id, id_patient, id_user, title, description, time_start, time_end
+		`SELECT id, id_patient, id_doctor, title, description, time_start, time_end
 				FROM %s WHERE id_patient = $1`,
 		scheduleTable,
 	)

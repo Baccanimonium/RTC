@@ -8,12 +8,6 @@ import (
 )
 
 func (h Handler) createEvent(c *gin.Context) {
-	idSchedule, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid id param")
-		return
-	}
-
 	var input Repos.Event
 
 	if err := c.BindJSON(&input); err != nil {
@@ -21,7 +15,7 @@ func (h Handler) createEvent(c *gin.Context) {
 		return
 	}
 
-	id, err := h.services.EventService.CreateEvent(idSchedule, input)
+	id, err := h.services.EventService.CreateEvent(input)
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -34,12 +28,23 @@ func (h Handler) createEvent(c *gin.Context) {
 }
 
 func (h Handler) listEvent(c *gin.Context) {
-	idSchedule, err := strconv.Atoi(c.Param("id"))
+	idDoctor, err := strconv.Atoi(c.Query("id_doctor"))
+
 	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid id param")
+		newErrorResponse(c, http.StatusBadRequest, "invalid idDoctor param")
 		return
 	}
-	scheduleList, err := h.services.EventService.GetAllEvents(idSchedule)
+	idPatient, err := strconv.Atoi(c.Query("id_patient"))
+
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid idDoctor param")
+		return
+	}
+
+	scheduleList, err := h.services.EventService.GetAllEvents(Repos.GetAllEventsParams{
+		IdDoctor:  idDoctor,
+		IdPatient: idPatient,
+	})
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -67,12 +72,6 @@ func (h Handler) getEvent(c *gin.Context) {
 }
 
 func (h Handler) UpdateEvent(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid id param")
-		return
-	}
-
 	var input Repos.Event
 
 	if err := c.BindJSON(&input); err != nil {
@@ -80,7 +79,7 @@ func (h Handler) UpdateEvent(c *gin.Context) {
 		return
 	}
 
-	schedule, err := h.services.EventService.UpdateEvent(input, id)
+	schedule, err := h.services.EventService.UpdateEvent(input)
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -97,7 +96,7 @@ func (h Handler) DeleteEvent(c *gin.Context) {
 		return
 	}
 
-	if err := h.services.EventService.DeleteEvent(id); err != nil {
+	if _, err := h.services.EventService.DeleteEvent(id); err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}

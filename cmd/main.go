@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
@@ -70,7 +70,7 @@ func main() {
 		DB:       0,                                 // use default DB
 	})
 
-	_, err = rdb.Ping().Result()
+	_, err = rdb.Ping(ctx).Result()
 
 	if err != nil {
 		logrus.Fatalf("failed to initialize redis: %s", err.Error())
@@ -89,7 +89,7 @@ func main() {
 		logrus.Fatalf("failed to initialize db: %s", err.Error())
 	}
 	broadcastChan := make(chan RTC.BroadcastingMessage)
-	repos := Repos.NewRepo(db, mongoDB)
+	repos := Repos.NewRepo(db, mongoDB, rdb)
 	// инициализируем стейт сокет хаба
 	socketHub := SocketHandlers.NewHub(repos, broadcastChan)
 	services := Services.NewService(repos, broadcastChan)
@@ -127,6 +127,9 @@ func main() {
 
 	if err := db.Close(); err != nil {
 		logrus.Errorf("error occured on db connection close: %s", err.Error())
+	}
+	if err := rdb.Close(); err != nil {
+		logrus.Errorf("error occured on redis connection close: %s", err.Error())
 	}
 
 }
