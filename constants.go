@@ -3,17 +3,21 @@ package RTC
 import "encoding/json"
 
 const (
-	BroadcastDeleteChatMessage = "onDeleteChatMessage"
-	BroadcastUpdateChatMessage = "onUpdateChatMessage"
-	BroadcastCreateChatMessage = "onNewChatMessage"
-	BroadcastCreateChannel     = "onNewChannel"
-	BroadcastDeleteChannel     = "onDeleteChannel"
-	BroadcastCreateSchedule    = "onNewSchedule"
-	BroadcastUpdateSchedule    = "onUpdateSchedule"
-	BroadcastDeleteSchedule    = "onDeleteSchedule"
-	BroadcastUpComingEvent     = "upComingEvent"
-	RTCCandidate               = "candidate"
-	RTCAnswer                  = "answer"
+	BroadcastDeleteChatMessage  = "onDeleteChatMessage"
+	BroadcastUpdateChatMessage  = "onUpdateChatMessage"
+	BroadcastCreateChatMessage  = "onNewChatMessage"
+	BroadcastCreateChannel      = "onNewChannel"
+	BroadcastDeleteChannel      = "onDeleteChannel"
+	BroadcastCreateSchedule     = "onNewSchedule"
+	BroadcastUpdateSchedule     = "onUpdateSchedule"
+	BroadcastDeleteSchedule     = "onDeleteSchedule"
+	BroadcastCreateGroupMessage = "onNewGroupMessage"
+	BroadcastUpdateGroupMessage = "onUpdateGroupMessage"
+	BroadcastDeleteGroupMessage = "onDeleteGroupMessage"
+	BroadcastPinGroupMessage    = "onDeleteGroupMessage"
+	BroadcastUpComingEvent      = "upComingEvent"
+	RTCCandidate                = "candidate"
+	RTCAnswer                   = "answer"
 )
 
 func ConvertToJson(value interface{}) (map[string]interface{}, error) {

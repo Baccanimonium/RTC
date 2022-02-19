@@ -64,12 +64,7 @@ func (m *Mongo) GetGroup(groupID string) (bson.M, error) {
 	return result, err
 }
 
-type GetGroupFilterParams struct {
-	Tags       []string
-	Pagination MongoPagination
-}
-
-func (m *Mongo) GetGroups(params GetGroupFilterParams) ([]Models.Group, error) {
+func (m *Mongo) GetGroups(params Models.GetGroupFilterParams) ([]Models.Group, error) {
 	var result = make([]Models.Group, 0)
 	groupCollection := m.db.Collection(GroupCollection)
 	ctx := context.TODO()

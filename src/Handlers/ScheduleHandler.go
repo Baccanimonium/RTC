@@ -4,11 +4,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
-	"video-chat-app/src/Repos"
+	"video-chat-app/src/Models"
 )
 
 func (h Handler) createSchedule(c *gin.Context) {
-	var input Repos.Schedule
+	var input Models.DoctorSchedule
 
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
@@ -26,13 +26,10 @@ func (h Handler) createSchedule(c *gin.Context) {
 }
 
 func (h Handler) listSchedule(c *gin.Context) {
-
-	idPatient, err := strconv.Atoi(c.Param("idPatient"))
-	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid idPatient param")
-		return
-	}
-	scheduleList, err := h.services.ScheduleService.GetAllSchedule(idPatient)
+	scheduleList, err := h.services.ScheduleService.GetAllSchedule(Models.PostgresPagination{
+		Limit: c.Param("limit"),
+		Skip:  c.Param("offset"),
+	})
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -43,13 +40,13 @@ func (h Handler) listSchedule(c *gin.Context) {
 }
 
 func (h Handler) getSchedule(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("doctor_id"))
 	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid id param")
+		newErrorResponse(c, http.StatusBadRequest, "invalid doctor_id param")
 		return
 	}
 
-	schedule, err := h.services.ScheduleService.GetScheduleById(id)
+	schedule, err := h.services.ScheduleService.GetScheduleByDoctorId(id)
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -60,20 +57,14 @@ func (h Handler) getSchedule(c *gin.Context) {
 }
 
 func (h Handler) UpdateSchedule(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid id param")
-		return
-	}
-
-	var input Repos.Schedule
+	var input Models.DoctorSchedule
 
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	schedule, err := h.services.ScheduleService.UpdateSchedule(input, id)
+	schedule, err := h.services.ScheduleService.UpdateSchedule(input)
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -84,9 +75,9 @@ func (h Handler) UpdateSchedule(c *gin.Context) {
 }
 
 func (h Handler) DeleteSchedule(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("doctor_id"))
 	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid id param")
+		newErrorResponse(c, http.StatusBadRequest, "invalid doctor_id param")
 		return
 	}
 
@@ -95,5 +86,5 @@ func (h Handler) DeleteSchedule(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{"id": id})
+	c.Status(http.StatusOK)
 }

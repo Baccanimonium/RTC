@@ -2,6 +2,7 @@ package Services
 
 import (
 	RTC "video-chat-app"
+	"video-chat-app/src/Models"
 	"video-chat-app/src/Repos"
 )
 
@@ -14,7 +15,7 @@ func NewScheduleService(repo Repos.ScheduleRepo, broadcast chan RTC.Broadcasting
 	return &ScheduleRepo{repo: repo, b: broadcast}
 }
 
-func (s *ScheduleRepo) CreateSchedule(schedule Repos.Schedule) (Repos.Schedule, error) {
+func (s *ScheduleRepo) CreateSchedule(schedule Models.DoctorSchedule) (Models.DoctorSchedule, error) {
 	newSchedule, err := s.repo.CreateSchedule(schedule)
 
 	rawSchedule, convertError := RTC.ConvertToJson(newSchedule)
@@ -29,8 +30,8 @@ func (s *ScheduleRepo) CreateSchedule(schedule Repos.Schedule) (Repos.Schedule, 
 	return newSchedule, err
 }
 
-func (s *ScheduleRepo) UpdateSchedule(schedule Repos.Schedule, id int) (Repos.Schedule, error) {
-	updatedSchedule, err := s.repo.UpdateSchedule(schedule, id)
+func (s *ScheduleRepo) UpdateSchedule(schedule Models.DoctorSchedule) (Models.DoctorSchedule, error) {
+	updatedSchedule, err := s.repo.UpdateSchedule(schedule)
 
 	rawSchedule, convertError := RTC.ConvertToJson(updatedSchedule)
 
@@ -44,12 +45,12 @@ func (s *ScheduleRepo) UpdateSchedule(schedule Repos.Schedule, id int) (Repos.Sc
 	return updatedSchedule, err
 }
 
-func (s *ScheduleRepo) GetScheduleById(id int) (Repos.Schedule, error) {
-	return s.repo.GetScheduleById(id)
+func (s *ScheduleRepo) GetScheduleByDoctorId(id int) (Models.DoctorSchedule, error) {
+	return s.repo.GetScheduleByDoctorId(id)
 }
 
-func (s *ScheduleRepo) GetAllSchedule(idPatient int) ([]Repos.Schedule, error) {
-	return s.repo.GetAllSchedule(idPatient)
+func (s *ScheduleRepo) GetAllSchedule(params Models.PostgresPagination) ([]Models.DoctorSchedule, error) {
+	return s.repo.GetAllSchedule(params)
 }
 
 func (s *ScheduleRepo) DeleteSchedule(id int) error {

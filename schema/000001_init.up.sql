@@ -41,13 +41,19 @@ CREATE TABLE patients_log
     log_type          varchar(25)
 );
 
+CREATE TABLE schedule
+(
+    id_doctor int references doctor (id) on delete cascade not null,
+    work_periods   jsonb
+);
+
 CREATE TABLE consultation
 (
     id            serial not null unique,
     id_patient    int references patient (id) on delete set null,
     id_user       int references users (id) on delete cascade not null,
-    time_start    varchar(16),
-    last          int,
+    start         bigint not null unique,
+    end           bigint not null unique,
     offline       boolean,
     doctor_joined varchar(25)
 );

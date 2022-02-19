@@ -4,6 +4,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/jmoiron/sqlx"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"video-chat-app/src/Models"
 )
@@ -14,11 +15,6 @@ type Postgres struct {
 
 type Mongo struct {
 	db *mongo.Database
-}
-
-type MongoPagination struct {
-	Limit *int64
-	Skip  *int64
 }
 
 type Redis struct {
@@ -37,6 +33,13 @@ type DoctorRepo interface {
 	GetDoctorById(id int) (Participant, error)
 	DeleteDoctor(id int) error
 }
+type ScheduleRepo interface {
+	CreateSchedule(schedule Models.DoctorSchedule) (Models.DoctorSchedule, error)
+	UpdateSchedule(schedule Models.DoctorSchedule) (Models.DoctorSchedule, error)
+	GetScheduleByDoctorId(id int) (Models.DoctorSchedule, error)
+	GetAllSchedule(params Models.PostgresPagination) ([]Models.DoctorSchedule, error)
+	DeleteSchedule(idDoctor int) (Models.DoctorSchedule, error)
+}
 
 type UserRepo interface {
 	UpdateUser(user UserCreate, id int) (UserCreate, error)
@@ -54,14 +57,14 @@ type PatientRepo interface {
 }
 
 type ConsultationRepo interface {
-	CreateConsultation(consultation Consultation) (Consultation, error)
-	GetAllConsultation(idDoctor int, idPatient int) ([]Consultation, error)
-	GetConsultationById(idConsultation int) (Consultation, error)
-	UpdateConsultation(consultation Consultation, id int) (Consultation, error)
+	CreateConsultation(consultation Models.Consultation) (Models.Consultation, error)
+	GetAllConsultation(Models.GetConsultationList) ([]Models.Consultation, error)
+	GetConsultationById(idConsultation int) (Models.Consultation, error)
+	UpdateConsultation(consultation Models.Consultation, id int) (Models.Consultation, error)
 	SetDoctorJoinTime(id int) error
 	DeleteConsultation(idConsultation int) error
-	CreateConsultationNotes(notes Notes) (Notes, error)
-	UpdateConsultationNotes(notes Notes) (Notes, error)
+	CreateConsultationNotes(notes Models.Notes) (Models.Notes, error)
+	UpdateConsultationNotes(notes Models.Notes) (Models.Notes, error)
 	DeleteConsultationNotes(idNotes int) error
 }
 
@@ -77,8 +80,8 @@ type MessagesRepo interface {
 	CreateMessage(newMessage Models.CreateMessage) (bson.M, error)
 	GetMessage(messageId interface{}) (bson.M, error)
 	GetMessages(channelId string) ([]Models.Message, error)
-	UpdateMessage(updatedMessage Models.Message) (bson.M, error)
-	DeleteMessage(message Models.DeleteMessage) (bson.M, error)
+	UpdateMessage(updatedMessage Models.Message, userId int) (bson.M, error)
+	DeleteMessage(message Models.DeleteMessage, userId int) (bson.M, error)
 }
 
 type ChannelsRepo interface {
@@ -107,9 +110,34 @@ type PatientCandidatesRepo interface {
 	GetAllPatientCandidates() ([]Models.PatientCandidate, error)
 }
 
+type GroupsRepo interface {
+	CreateGroup(newGroup Models.Group) (string, error)
+	GetGroup(groupID string) (bson.M, error)
+	GetGroups(params Models.GetGroupFilterParams) ([]Models.Group, error)
+	UpdateGroup(updatedGroup Models.Group) (bson.M, error)
+	DeleteGroup(groupId string) (bson.M, error)
+	SubscribeToGroup(subscription Models.GroupSubscription) (bson.M, error)
+	UnSubscribeToGroup(subscription Models.GroupSubscription) (bson.M, error)
+	PinGroupMessage(pinMessage Models.GroupPinMessage) (bson.M, error)
+}
+
+type GroupsMessagesRepo interface {
+	CreateGroupMessage(newMessage Models.GroupMessage) (bson.M, error)
+	GetGroupMessage(messageId primitive.ObjectID) (bson.M, error)
+	GetGroupMessages(params Models.GetGroupMessages) ([]Models.GroupMessage, error)
+	UpdateGroupMessage(updatedGroup Models.GroupMessage) (bson.M, error)
+	DeleteGroupMessage(groupId string) (bson.M, error)
+	CreateGroupMessageComment(newMessageComment Models.GroupMessageComment) (string, error)
+	GetGroupMessageComment(messageCommentId string) (bson.M, error)
+	GetGroupMessagesComment(params Models.GetGroupMessagesComments) ([]Models.GroupMessageComment, error)
+	UpdateGroupMessageComment(updatedGroup Models.GroupMessageComment) (bson.M, error)
+	DeleteGroupMessageComment(groupId string) (bson.M, error)
+}
+
 type Repo struct {
 	Authorization
 	DoctorRepo
+	ScheduleRepo
 	PatientRepo
 	ConsultationRepo
 	EventRepo
@@ -119,12 +147,15 @@ type Repo struct {
 	TaskCandidatesRepo
 	TaskRepo
 	PatientCandidatesRepo
+	GroupsRepo
+	GroupsMessagesRepo
 }
 
 func NewRepo(db *sqlx.DB, mongoDB *mongo.Database, rdb *redis.Client) *Repo {
 	return &Repo{
 		Authorization:         NewAuthPostgresRepo(db),
 		DoctorRepo:            NewDoctorPostgresRepo(db),
+		ScheduleRepo:          NewSchedulePostgresRepo(db),
 		PatientRepo:           NewPatientPostgresRepo(db),
 		ConsultationRepo:      NewConsultationPostgresRepo(db),
 		EventRepo:             NewEventPostgresRepo(db),
@@ -134,5 +165,7 @@ func NewRepo(db *sqlx.DB, mongoDB *mongo.Database, rdb *redis.Client) *Repo {
 		TaskCandidatesRepo:    NewTaskCandidatesRedisRepo(rdb),
 		TaskRepo:              NewTaskPostgresRepo(db),
 		PatientCandidatesRepo: NewPatientCandidatesRepo(mongoDB),
+		GroupsRepo:            NewMongoGroupRepo(mongoDB),
+		GroupsMessagesRepo:    NewMongoGroupMessagesRepo(mongoDB),
 	}
 }

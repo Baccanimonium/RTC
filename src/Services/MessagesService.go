@@ -1,7 +1,6 @@
 package Services
 
 import (
-	"errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"video-chat-app"
 	"video-chat-app/src/Models"
@@ -37,14 +36,9 @@ func (s *MessagesRepo) GetMessages(channelId string, userId interface{}) ([]Mode
 	return s.repo.GetMessages(channelId)
 }
 
-func (s *MessagesRepo) UpdateMessage(updatedMessage Models.Message, userId interface{}) (bson.M, error) {
-	// TODO переделать проверки, на проверки в базе. типо искать и по _id и по creator
-	message, err := s.repo.GetMessage(updatedMessage.Id)
-	if err != nil || message["creator"] != userId {
-		return nil, errors.New("creators ids comparison failed")
-	}
+func (s *MessagesRepo) UpdateMessage(updatedMessage Models.Message, userId int) (bson.M, error) {
 
-	nextMessage, err := s.repo.UpdateMessage(updatedMessage)
+	nextMessage, err := s.repo.UpdateMessage(updatedMessage, userId)
 
 	if err == nil {
 		s.b <- RTC.BroadcastingMessage{
@@ -56,13 +50,9 @@ func (s *MessagesRepo) UpdateMessage(updatedMessage Models.Message, userId inter
 	return nextMessage, err
 }
 
-func (s *MessagesRepo) DeleteMessage(dMessage Models.DeleteMessage, userId interface{}) (bson.M, error) {
-	message, err := s.repo.GetMessage(dMessage.Id)
-	if err != nil || message["creator"] != userId {
-		return nil, errors.New("creators ids comparison failed")
-	}
+func (s *MessagesRepo) DeleteMessage(dMessage Models.DeleteMessage, userId int) (bson.M, error) {
 
-	deletedMessage, err := s.repo.DeleteMessage(dMessage)
+	deletedMessage, err := s.repo.DeleteMessage(dMessage, userId)
 
 	if err == nil {
 		s.b <- RTC.BroadcastingMessage{

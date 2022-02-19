@@ -4,11 +4,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
-	"video-chat-app/src/Repos"
+	"video-chat-app/src/Models"
 )
 
 func (h Handler) getConsultation(c *gin.Context) {
-	idConsultation, err := strconv.Atoi(c.Param("ct_id"))
+	idConsultation, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		newErrorResponse(c, http.StatusBadRequest, "invalid idConsultation param")
 		return
@@ -25,7 +25,7 @@ func (h Handler) getConsultation(c *gin.Context) {
 }
 
 func (h Handler) createConsultation(c *gin.Context) {
-	var input Repos.Consultation
+	var input Models.Consultation
 
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
@@ -48,13 +48,13 @@ func (h Handler) updateConsultation(c *gin.Context) {
 	//	newErrorResponse(c, http.StatusBadRequest, "invalid idSchedule param")
 	//	return
 	//}
-	idConsultation, err := strconv.Atoi(c.Param("ct_id"))
+	idConsultation, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		newErrorResponse(c, http.StatusBadRequest, "invalid idConsultation param")
 		return
 	}
 
-	var input Repos.Consultation
+	var input Models.Consultation
 
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
@@ -85,7 +85,24 @@ func (h Handler) listConsultation(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, "invalid idDoctor param")
 		return
 	}
-	consultationList, err := h.services.ConsultationService.GetAllConsultation(idDoctor, idPatient)
+
+	start, err := strconv.ParseInt(c.Query("start"), 10, 64)
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid limit param")
+		return
+	}
+	end, err := strconv.ParseInt(c.Query("end"), 10, 64)
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid offset param")
+		return
+	}
+
+	consultationList, err := h.services.ConsultationService.GetAllConsultation(Models.GetConsultationList{
+		IdDoctor:  idDoctor,
+		IdPatient: idPatient,
+		Start:     start,
+		End:       end,
+	})
 
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -96,7 +113,7 @@ func (h Handler) listConsultation(c *gin.Context) {
 }
 
 func (h Handler) deleteConsultation(c *gin.Context) {
-	idConsultation, err := strconv.Atoi(c.Param("ct_id"))
+	idConsultation, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		newErrorResponse(c, http.StatusBadRequest, "invalid idConsultation param")
 		return

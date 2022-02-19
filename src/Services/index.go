@@ -2,6 +2,7 @@ package Services
 
 import (
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	RTC "video-chat-app"
 	"video-chat-app/src/Models"
 	"video-chat-app/src/Repos"
@@ -19,6 +20,13 @@ type DoctorService interface {
 	GetDoctorById(id int) (Repos.Participant, error)
 	DeleteDoctor(id int) error
 }
+type ScheduleService interface {
+	CreateSchedule(schedule Models.DoctorSchedule) (Models.DoctorSchedule, error)
+	UpdateSchedule(schedule Models.DoctorSchedule) (Models.DoctorSchedule, error)
+	GetScheduleByDoctorId(id int) (Models.DoctorSchedule, error)
+	GetAllSchedule(params Models.PostgresPagination) ([]Models.DoctorSchedule, error)
+	DeleteSchedule(id int) error
+}
 type UserService interface {
 	UpdateUser(user Repos.UserCreate, id int) (Repos.UserCreate, error)
 	GetAllUser() ([]Repos.UserCreate, error)
@@ -34,14 +42,14 @@ type PatientService interface {
 }
 
 type ConsultationService interface {
-	CreateConsultation(consultation Repos.Consultation) (Repos.Consultation, error)
-	GetAllConsultation(idDoctor int, idPatient int) ([]Repos.Consultation, error)
-	GetConsultationById(idConsultation int) (Repos.Consultation, error)
-	UpdateConsultation(consultation Repos.Consultation, id int) (Repos.Consultation, error)
+	CreateConsultation(consultation Models.Consultation) (Models.Consultation, error)
+	GetAllConsultation(Models.GetConsultationList) ([]Models.Consultation, error)
+	GetConsultationById(idConsultation int) (Models.Consultation, error)
+	UpdateConsultation(consultation Models.Consultation, id int) (Models.Consultation, error)
 	SetDoctorJoinTime(id int) error
 	DeleteConsultation(idConsultation int) error
-	CreateConsultationNotes(notes Repos.Notes) (Repos.Notes, error)
-	UpdateConsultationNotes(notes Repos.Notes) (Repos.Notes, error)
+	CreateConsultationNotes(notes Models.Notes) (Models.Notes, error)
+	UpdateConsultationNotes(notes Models.Notes) (Models.Notes, error)
 	DeleteConsultationNotes(idNotes int) error
 }
 
@@ -57,6 +65,8 @@ type MessagesService interface {
 	CreateMessage(newMessage Models.CreateMessage) (bson.M, error)
 	GetMessage(messageId interface{}) (bson.M, error)
 	GetMessages(channelId string, userId interface{}) ([]Models.Message, error)
+	UpdateMessage(updatedMessage Models.Message, userId int) (bson.M, error)
+	DeleteMessage(message Models.DeleteMessage, userId int) (bson.M, error)
 }
 
 type ChannelsService interface {
@@ -85,9 +95,34 @@ type PatientCandidatesService interface {
 	GetAllPatientCandidates() ([]Models.PatientCandidate, error)
 }
 
+type GroupsService interface {
+	CreateGroup(newGroup Models.Group) (string, error)
+	GetGroup(groupID string) (bson.M, error)
+	GetGroups(params Models.GetGroupFilterParams) ([]Models.Group, error)
+	UpdateGroup(updatedGroup Models.Group) (bson.M, error)
+	DeleteGroup(groupId string) (bson.M, error)
+	SubscribeToGroup(subscription Models.GroupSubscription) (bson.M, error)
+	UnSubscribeToGroup(subscription Models.GroupSubscription) (bson.M, error)
+	PinGroupMessage(pinMessage Models.GroupPinMessage) error
+}
+
+type GroupMessagesService interface {
+	CreateGroupMessage(newMessage Models.GroupMessage) (bson.M, error)
+	GetGroupMessage(messageId primitive.ObjectID) (bson.M, error)
+	GetGroupMessages(params Models.GetGroupMessages) ([]Models.GroupMessage, error)
+	UpdateGroupMessage(updatedGroup Models.GroupMessage) (bson.M, error)
+	DeleteGroupMessage(groupId string) error
+	CreateGroupMessageComment(newMessageComment Models.GroupMessageComment) (string, error)
+	GetGroupMessageComment(messageCommentId string) (bson.M, error)
+	GetGroupMessagesComment(params Models.GetGroupMessagesComments) ([]Models.GroupMessageComment, error)
+	UpdateGroupMessageComment(updatedGroup Models.GroupMessageComment) (bson.M, error)
+	DeleteGroupMessageComment(groupId string) (bson.M, error)
+}
+
 type Services struct {
 	Authorization
 	DoctorService
+	ScheduleService
 	PatientService
 	ConsultationService
 	EventService
@@ -97,12 +132,15 @@ type Services struct {
 	TaskCandidatesService
 	TaskService
 	PatientCandidatesService
+	GroupsService
+	GroupMessagesService
 }
 
 func NewService(repo *Repos.Repo, broadcast chan RTC.BroadcastingMessage) *Services {
 	return &Services{
 		Authorization:            NewAuthService(repo.Authorization),
 		DoctorService:            NewDoctorService(repo.DoctorRepo),
+		ScheduleService:          NewScheduleService(repo.ScheduleRepo, broadcast),
 		PatientService:           NewPatientService(repo.PatientRepo),
 		ConsultationService:      NewConsultationService(repo.ConsultationRepo),
 		EventService:             NewEventService(repo.EventRepo),
@@ -112,5 +150,7 @@ func NewService(repo *Repos.Repo, broadcast chan RTC.BroadcastingMessage) *Servi
 		TaskCandidatesService:    NewTaskCandidatesService(repo.TaskCandidatesRepo),
 		TaskService:              NewTaskService(repo.TaskRepo),
 		PatientCandidatesService: NewPatientCandidatesService(repo.PatientCandidatesRepo),
+		GroupsService:            NewGroupService(repo.GroupsRepo, broadcast),
+		GroupMessagesService:     NewGroupMessagesService(repo.GroupsMessagesRepo, broadcast),
 	}
 }

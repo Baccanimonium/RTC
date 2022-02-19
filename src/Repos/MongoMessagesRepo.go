@@ -32,7 +32,7 @@ func (m *Mongo) CreateMessage(newMessage Models.CreateMessage) (bson.M, error) {
 	return m.GetMessage(r.InsertedID)
 }
 
-func (m *Mongo) UpdateMessage(updatedMessage Models.Message) (bson.M, error) {
+func (m *Mongo) UpdateMessage(updatedMessage Models.Message, userId int) (bson.M, error) {
 	messagesCollection := m.db.Collection(MessagesCollection)
 	upsert := true
 	after := options.After
@@ -42,7 +42,7 @@ func (m *Mongo) UpdateMessage(updatedMessage Models.Message) (bson.M, error) {
 	}
 	result := messagesCollection.FindOneAndUpdate(
 		context.TODO(),
-		bson.M{"_id": updatedMessage.Id},
+		bson.M{"_id": updatedMessage.Id, "creator": userId},
 		bson.M{
 			"$set": bson.M{
 				"text":    updatedMessage.Text,
@@ -69,10 +69,10 @@ func (m *Mongo) UpdateMessage(updatedMessage Models.Message) (bson.M, error) {
 	return nextMessage, nil
 }
 
-func (m *Mongo) DeleteMessage(message Models.DeleteMessage) (bson.M, error) {
+func (m *Mongo) DeleteMessage(message Models.DeleteMessage, userId int) (bson.M, error) {
 	messagesCollection := m.db.Collection(MessagesCollection)
 
-	_, err := messagesCollection.DeleteOne(context.TODO(), bson.M{"_id": message.Id})
+	_, err := messagesCollection.DeleteOne(context.TODO(), bson.M{"_id": message.Id, "creator": userId})
 
 	if err != nil {
 		logrus.Print("error occur during message deleting")

@@ -25,15 +25,6 @@ type Hub struct {
 
 func NewHub(repo *Repos.Repo, broadcast chan RTC.BroadcastingMessage) *Hub {
 
-	//mongo.Collection("channels").Drop(context.TODO())
-	//asd, err := mongo.Collection("channels").EstimatedDocumentCount(context.TODO())
-	//
-	//if err != nil {
-	//	logrus.Fatalf("failed to initialize db: %s", err.Error())
-	//}
-	//
-	//logrus.Print("44doc num ", asd)
-
 	return &Hub{
 		broadcast:  broadcast,
 		register:   make(chan *Client),
@@ -65,6 +56,7 @@ func (h *Hub) Run() {
 			if message.MessageType == RTC.BroadcastCreateChatMessage ||
 				message.MessageType == RTC.BroadcastDeleteChatMessage ||
 				message.MessageType == RTC.BroadcastUpdateChatMessage {
+
 				channel, err := h.repo.GetChannelByID(message.Payload["channelId"])
 				if err != nil {
 					logrus.Print("error during messages distribution")

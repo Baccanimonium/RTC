@@ -98,21 +98,50 @@ func (h *Handler) InitRouter(socketFactory *SocketHandlers.SocketClientFactory) 
 			event.DELETE("/:id", h.DeleteEvent)
 		}
 
+		consultation := api.Group("/consultation")
+		{
+			consultation.POST("/", h.createConsultation)
+			consultation.GET("/", h.listConsultation)
+			consultation.GET("/:id", h.getConsultation)
+			consultation.PUT("/:id", h.updateConsultation)
+			consultation.DELETE("/:id", h.deleteConsultation)
+		}
+
 		schedule := api.Group("/schedule")
 		{
 			schedule.POST("/", h.createSchedule)
 			schedule.GET("/", h.listSchedule)
-			schedule.GET("/:id", h.getSchedule)
-			schedule.PUT("/:id", h.UpdateSchedule)
-			schedule.DELETE("/:id", h.DeleteSchedule)
+			schedule.GET("/:doctor_id", h.getSchedule)
+			schedule.PUT("/:doctor_id", h.UpdateSchedule)
+			schedule.DELETE("/:doctor_id", h.DeleteSchedule)
+		}
 
-			consultation := schedule.Group(":id/consultation")
+		group := api.Group("/group")
+		{
+			group.POST("/", h.createGroup)
+			group.GET("/", h.getGroups)
+			group.GET("/:id", h.getGroup)
+			group.PUT("/:id", h.updateGroup)
+			group.DELETE("/:id", h.deleteGroup)
+			group.POST("/subscribe", h.subscribeToGroup)
+			group.POST("/un_subscribe", h.unSubscribeToGroup)
+			group.POST("/pin_group_message", h.pinGroupMessage)
+
+			groupMessages := group.Group(":id/messages")
 			{
-				consultation.POST("/", h.createConsultation)
-				consultation.GET("/", h.listConsultation)
-				consultation.GET("/:ct_id", h.getConsultation)
-				consultation.PUT("/:ct_id", h.updateConsultation)
-				consultation.DELETE("/:ct_id", h.deleteConsultation)
+				groupMessages.POST("/", h.createGroupMessage)
+				groupMessages.GET("/", h.listGroupMessage)
+				//groupMessages.GET("/:message_id", h.getConsultation)
+				groupMessages.PUT("/:message_id", h.updateGroupMessage)
+				groupMessages.DELETE("/:message_id", h.deleteGroupMessage)
+			}
+			groupMessagesComments := groupMessages.Group(":message_id/comments")
+			{
+				groupMessagesComments.POST("/", h.createGroupMessageComment)
+				groupMessagesComments.GET("/", h.listGroupMessageComment)
+				groupMessagesComments.GET("/:comment_id", h.getGroupMessageComment)
+				groupMessagesComments.PUT("/:comment_id", h.updateGroupMessageComment)
+				groupMessagesComments.DELETE("/:comment_id", h.deleteGroupMessageComment)
 			}
 		}
 	}

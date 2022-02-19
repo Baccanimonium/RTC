@@ -3,14 +3,16 @@ package Repos
 import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"video-chat-app/src/Models"
 )
 
 type Doctor struct {
-	Id             int     `json:"id,omitempty" db:"id_doctor"`
-	IdUser         int     `json:"id_user,omitempty" db:"id_origin" binding:"required"`
-	Salary         float64 `json:"salary,omitempty"`
-	Qualifications string  `json:"qualifications,omitempty"`
-	Contacts       string  `json:"contacts,omitempty"`
+	Id             int             `json:"id,omitempty" db:"id_doctor"`
+	IdUser         int             `json:"id_user,omitempty" db:"id_origin" binding:"required"`
+	Salary         float64         `json:"salary,omitempty"`
+	Qualifications string          `json:"qualifications,omitempty"`
+	Contacts       string          `json:"contacts,omitempty"`
+	WorkPeriods    []Models.Period `json:"work_periods,omitempty"`
 }
 
 func NewDoctorPostgresRepo(db *sqlx.DB) *Postgres {
@@ -38,9 +40,9 @@ func (r *Postgres) GetAllDoctor() ([]Participant, error) {
 
 	query := fmt.Sprintf(`SELECT
 		doc.id, doc.id_user as id_origin, doc.salary, doc.qualifications, doc.contacts,
-		us.address, us.about, us.name, us.phone
-		FROM %s doc INNER JOIN %s us ON doc.id_user = us.id`,
-		doctorTable, usersTable,
+		us.address, us.about, us.name, us.phone, sh.work_periods
+		FROM %s doc INNER JOIN %s us ON doc.id_user = us.id INNER JOIN %s sh ON doc.id = sh.id_doctor`,
+		doctorTable, usersTable, scheduleTable,
 	)
 
 	err := r.db.Select(&doctors, query)
@@ -53,9 +55,9 @@ func (r *Postgres) GetDoctorById(id int) (Participant, error) {
 
 	query := fmt.Sprintf(`SELECT
 		doc.id, doc.id_user as id_origin, doc.salary, doc.qualifications, doc.contacts,
-		us.address, us.about, us.name, us.phone
-		FROM %s doc INNER JOIN %s us ON doc.id_user = us.id WHERE doc.id = $1`,
-		doctorTable, usersTable,
+		us.address, us.about, us.name, us.phone, sh.work_periods
+		FROM %s doc INNER JOIN %s us ON doc.id_user = us.id INNER JOIN %s sh ON doc.id = sh.id_doctor WHERE doc.id = $1`,
+		doctorTable, usersTable, scheduleTable,
 	)
 
 	err := r.db.Get(&doctors, query, id)

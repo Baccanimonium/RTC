@@ -5,25 +5,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"strings"
 	"time"
+	"video-chat-app/src/Models"
 )
-
-type Consultation struct {
-	Id           int    `json:"id"`
-	IdPatient    int    `json:"id_patient" binding:"required"`
-	IdDoctor     int    `json:"id_doctor"  binding:"required"`
-	TimeStart    string `json:"time_start" binding:"required"`
-	Last         int    `json:"last"       binding:"required"`
-	Offline      bool   `json:"offline"    binding:"required"`
-	DoctorJoined string `json:"doctor_joined"`
-}
-
-type Notes struct {
-	Id             int      `json:"id"`
-	Notes          int      `json:"notes" binding:"required"`
-	IdConsultation int      `json:"id_consultation" binding:"required"`
-	ForDoctor      bool     `json:"for_doctor"`
-	Files          []string `json:"files"`
-}
 
 /*
 	Консультация создается каждый раз вручную
@@ -39,11 +22,11 @@ func NewConsultationPostgresRepo(db *sqlx.DB) *Postgres {
 	return &Postgres{db: db}
 }
 
-func (r *Postgres) CreateConsultation(consultation Consultation) (Consultation, error) {
-	var result Consultation
+func (r *Postgres) CreateConsultation(consultation Models.Consultation) (Models.Consultation, error) {
+	var result Models.Consultation
 
 	query := fmt.Sprintf(
-		`INSERT INTO %s (id_patient, id_doctor, time_start, last, offline)
+		`INSERT INTO %s (id_patient, id_doctor, start, end, offline)
 				values ($1, $2, $3, $4, $5, $6) RETURNING *`,
 		consultationTable,
 	)
@@ -51,40 +34,60 @@ func (r *Postgres) CreateConsultation(consultation Consultation) (Consultation, 
 		query,
 		consultation.IdPatient,
 		consultation.IdDoctor,
-		consultation.TimeStart,
-		consultation.Last,
+		consultation.Start,
+		consultation.End,
 		consultation.Offline,
 	)
 
 	if err := row.Scan(&result); err != nil {
-		return Consultation{}, err
+		return Models.Consultation{}, err
 	}
 
 	return result, nil
 }
 
-func (r *Postgres) GetAllConsultation(idDoctor int, idPatient int) ([]Consultation, error) {
-	var result = make([]Consultation, 0)
+func (r *Postgres) GetAllConsultation(params Models.GetConsultationList) ([]Models.Consultation, error) {
+	var result = make([]Models.Consultation, 0)
 	var conditionQuery []string
 	argsArray := make([]interface{}, 0)
 	argsCount := 0
 
-	if idPatient != 0 {
+	if params.IdPatient != 0 {
 		conditionQuery = append(conditionQuery, fmt.Sprintf(
 			"id_patient = $%d",
 			argsCount+1,
 		))
 		argsCount += 1
-		argsArray = append(argsArray, idPatient)
+		argsArray = append(argsArray, params.IdPatient)
 	}
 
-	if idPatient != 0 {
+	if params.IdDoctor != 0 {
 		conditionQuery = append(conditionQuery, fmt.Sprintf(
 			"id_doctor = $%d",
 			argsCount+1,
 		))
 		argsCount += 1
-		argsArray = append(argsArray, idDoctor)
+		argsArray = append(argsArray, params.IdDoctor)
+
+	}
+
+	if params.Start != 0 {
+		conditionQuery = append(conditionQuery, fmt.Sprintf(
+			"start >= $%d",
+			argsCount+1,
+		))
+		argsCount += 1
+		argsArray = append(argsArray, params.Start)
+
+	}
+
+	if params.End != 0 {
+		conditionQuery = append(conditionQuery, fmt.Sprintf(
+			"end <= $%d",
+			argsCount+1,
+		))
+		argsCount += 1
+		argsArray = append(argsArray, params.End)
 
 	}
 
@@ -98,8 +101,8 @@ func (r *Postgres) GetAllConsultation(idDoctor int, idPatient int) ([]Consultati
 	return result, err
 }
 
-func (r *Postgres) GetConsultationById(idConsultation int) (Consultation, error) {
-	var consultation Consultation
+func (r *Postgres) GetConsultationById(idConsultation int) (Models.Consultation, error) {
+	var consultation Models.Consultation
 
 	query := fmt.Sprintf(`SELECT * FROM %s WHERE id = $1`,
 		consultationTable,
@@ -110,13 +113,13 @@ func (r *Postgres) GetConsultationById(idConsultation int) (Consultation, error)
 	return consultation, err
 }
 
-func (r *Postgres) UpdateConsultation(consultation Consultation, id int) (Consultation, error) {
-	var newConsultation Consultation
+func (r *Postgres) UpdateConsultation(consultation Models.Consultation, id int) (Models.Consultation, error) {
+	var newConsultation Models.Consultation
 	query := fmt.Sprintf(
-		"UPDATE %s SET time_start=$1, last=$2, offline=$3 WHERE id=$4 RETURNING *",
+		"UPDATE %s SET start=$1, end=$2, offline=$3 WHERE id=$4 RETURNING *",
 		consultationTable,
 	)
-	err := r.db.Get(&newConsultation, query, consultation.TimeStart, consultation.Last, consultation.Offline, id)
+	err := r.db.Get(&newConsultation, query, consultation.Start, consultation.End, consultation.Offline, id)
 	return newConsultation, err
 }
 
@@ -140,8 +143,8 @@ func (r *Postgres) DeleteConsultation(idConsultation int) error {
 	return err
 }
 
-func (r *Postgres) CreateConsultationNotes(notes Notes) (Notes, error) {
-	var result Notes
+func (r *Postgres) CreateConsultationNotes(notes Models.Notes) (Models.Notes, error) {
+	var result Models.Notes
 
 	query := fmt.Sprintf(
 		`INSERT INTO %s (notes, id_consultation, for_doctor, files)
@@ -157,14 +160,14 @@ func (r *Postgres) CreateConsultationNotes(notes Notes) (Notes, error) {
 	)
 
 	if err := row.Scan(&result); err != nil {
-		return Notes{}, err
+		return Models.Notes{}, err
 	}
 
 	return result, nil
 }
 
-func (r *Postgres) UpdateConsultationNotes(notes Notes) (Notes, error) {
-	var result Notes
+func (r *Postgres) UpdateConsultationNotes(notes Models.Notes) (Models.Notes, error) {
+	var result Models.Notes
 
 	query := fmt.Sprintf(
 		`UPDATE %s SET notes=$1, files=$2 WHERE id=$3 RETURNING *`,
@@ -178,7 +181,7 @@ func (r *Postgres) UpdateConsultationNotes(notes Notes) (Notes, error) {
 	)
 
 	if err := row.Scan(&result); err != nil {
-		return Notes{}, err
+		return Models.Notes{}, err
 	}
 
 	return result, nil
